@@ -1,0 +1,66 @@
+{
+	"name": "konradmichalik/typo3-request-profiler",
+	"description": "Dev-only TYPO3 frontend request profiler that records SQL queries, N+1 patterns, cache state and timing as compact JSON profiles for AI coding assistants.",
+	"license": [
+		"GPL-2.0-or-later"
+	],
+	"type": "typo3-cms-extension",
+	"authors": [
+		{
+			"name": "Konrad Michalik",
+			"email": "km@move-elevator.de",
+			"role": "Maintainer"
+		}
+	],
+	"require": {
+		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+		"doctrine/dbal": "^3.9 || ^4.0",
+		"psr/http-message": "^1.0 || ^2.0",
+		"psr/http-server-handler": "^1.0.2",
+		"psr/http-server-middleware": "^1.0.2",
+		"typo3/cms-core": "^13.4 || ^14.0",
+		"typo3/cms-frontend": "^13.4 || ^14.0"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
+		"typo3/cms-base-distribution": "^13.4 || ^14.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"KonradMichalik\\Typo3RequestProfiler\\": "Classes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"KonradMichalik\\Typo3RequestProfiler\\Tests\\": "Tests/"
+		}
+	},
+	"config": {
+		"allow-plugins": {
+			"typo3/class-alias-loader": true,
+			"typo3/cms-composer-installers": true
+		},
+		"platform": {
+			"php": "8.2"
+		},
+		"sort-packages": true
+	},
+	"extra": {
+		"konradmichalik/php-cs-fixer-preset": {
+			"copyright": 2026
+		},
+		"typo3/cms": {
+			"cms-package-dir": "{$vendor-dir}/typo3/cms",
+			"extension-key": "typo3_request_profiler",
+			"web-dir": "public"
+		}
+	},
+	"scripts": {
+		"post-install-cmd": [
+			"@cgl install"
+		],
+		"cgl": "@composer -d Tests/CGL --",
+		"test": "@test:coverage --no-coverage",
+		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml"
+	}
+}

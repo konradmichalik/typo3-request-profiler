@@ -1,0 +1,8 @@
+/.Build/
+/.ddev/.env
+/composer.lock
+/public/
+/var/
+/vendor/
+.DS_Store
+.phpunit.result.cache

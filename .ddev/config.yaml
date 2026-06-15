@@ -1,0 +1,15 @@
+name: typo3-request-profiler
+type: php
+docroot: public
+php_version: "8.3"
+webserver_type: apache-fpm
+database:
+  type: mariadb
+  version: "10.11"
+composer_version: "2"
+
+# Multi-version TYPO3 test environment is provided by the add-on:
+#   ddev add-on get konradmichalik/ddev-typo3-multi-version-extension
+# After installation, limit the matrix to v13 + v14 by setting
+#   TYPO3_VERSIONS: "13,14"
+# in .ddev/docker-compose.typo3-setup.yaml, then run `ddev install all`.

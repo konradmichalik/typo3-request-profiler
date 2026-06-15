@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  KonradMichalik\Typo3RequestProfiler\:
+    resource: '../Classes/*'
+    exclude:
+      # Instantiated by Doctrine outside the container; args are not autowirable.
+      - '../Classes/Profiling/Doctrine/*'
+      # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
+      - '../Classes/Profiling/QueryCollector.php'
+
+  KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware:
+    public: true
