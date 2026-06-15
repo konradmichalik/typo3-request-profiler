@@ -11,12 +11,12 @@
 
 </div>
 
-A dev-only TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request — SQL queries, N+1 patterns, cache state, and timing — to `var/log/profiles/{request_id}.json`.
+A _dev-only_ TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request — SQL queries, N+1 patterns, cache state, and timing — to `var/log/profiles/{request_id}.json`.
 
 > [!IMPORTANT]
 > This extension is **active only in a Development context** (`Environment::getContext()->isDevelopment()`). It registers no middleware and collects no data in production.
 
-The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) — and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces — but records them as compact, machine-readable JSON instead of an interactive panel. The profiles are designed to be consumed by AI coding assistants via [`konradmichalik/typo3-ai-mate`](https://github.com/konradmichalik/typo3-ai-mate) and its `typo3_performance` MCP tool, correlated by the shared `token`/`request_id`. Collect here — expose there.
+The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) — and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces — but records them as compact, machine-readable JSON instead of an interactive panel.
 
 > [!WARNING]
 > This package is in early development stage and may change significantly in the future. I am working steadily to release a stable version as soon as possible.
@@ -30,17 +30,23 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 
 ## 🔥 Installation
 
+### Requirements
+
+* TYPO3 13.4 LTS & 14.0+
+* PHP 8.2+
+* Doctrine DBAL 3.x or 4.x
+
+### Supports
+
+| **Version** | **TYPO3** | **PHP** |
+|-------------|-----------|---------|
+| 0.x         | 13-14     | 8.2-8.5 |
+
+### Composer
+
 ```bash
 composer require --dev konradmichalik/typo3-request-profiler
 ```
-
-No further configuration is needed. In a Development context the profiler registers a Doctrine driver middleware and a frontend PSR-15 middleware automatically.
-
-## ✨ Requirements
-
-- TYPO3 **v13.4** or **v14.3**
-- PHP **8.2+**, Composer mode
-- Doctrine DBAL 3.x or 4.x
 
 ## ⚙️ Configuration
 
@@ -80,18 +86,6 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   ]
 }
 ```
-
-**Field reference:**
-
-- `token` — equals `TYPO3\CMS\Core\Core\RequestId`; correlates with the `request="…"` value in the TYPO3 logs and with the `typo3_performance` MCP tool in `typo3-ai-mate`.
-- `cache.hit` — true only when the page is cacheable and was not regenerated this request. `cache.cacheable` comes from the `frontend.cache.instruction` request attribute and disambiguates `no_cache`/`USER_INT` pages. `cache.disabled_reasons` (present only when uncached) lists why caching was disabled — the most common cause of slow pages.
-- `memory.peak_mb` — request peak memory via `memory_get_peak_usage`.
-- `slow_queries` — top 5 single executions by wall-clock time; surfaces one expensive query even without an N+1.
-- `duplicate_queries` — top 20 normalised queries with `count > 1`, sorted by count descending. SQL normalisation replaces literals with `?`, collapses whitespace, and reduces `IN (…)` lists to `IN (?)`.
-- `origin` (optional) — present on `slow_queries`/`duplicate_queries` entries when `TYPO3_REQUEST_PROFILER_TRACE=1`; points straight at the code that issued the query.
-
-> [!NOTE]
-> Dev-only connection and schema introspection queries (`information_schema`, `SELECT DATABASE()`, `SHOW …`) are automatically filtered out so application queries remain in focus.
 
 ## 🧑‍💻 Contributing
 
