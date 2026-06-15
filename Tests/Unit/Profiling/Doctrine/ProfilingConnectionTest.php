@@ -20,13 +20,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-
 /**
  * ProfilingConnectionTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class ProfilingConnectionTest extends TestCase
 {
     private QueryCollector $collector;

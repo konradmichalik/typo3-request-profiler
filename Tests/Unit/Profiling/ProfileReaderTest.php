@@ -17,13 +17,11 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 
-
 /**
  * ProfileReaderTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class ProfileReaderTest extends TestCase
 {
     private string $directory;

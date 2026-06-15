@@ -17,13 +17,11 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine\QueryOrigin;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 
-
 /**
  * QueryOriginTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class QueryOriginTest extends TestCase
 {
     protected function tearDown(): void

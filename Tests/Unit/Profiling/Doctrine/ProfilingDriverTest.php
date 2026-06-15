@@ -21,13 +21,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-
 /**
  * ProfilingDriverTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class ProfilingDriverTest extends TestCase
 {
     #[Test]

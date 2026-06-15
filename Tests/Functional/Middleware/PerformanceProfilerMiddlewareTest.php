@@ -22,13 +22,11 @@ use TYPO3\CMS\Core\Core\{Environment, RequestId};
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
-
 /**
  * PerformanceProfilerMiddlewareTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
 {
     protected bool $initializeDatabase = false;

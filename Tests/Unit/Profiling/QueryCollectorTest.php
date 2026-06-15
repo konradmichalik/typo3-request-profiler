@@ -17,13 +17,11 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-
 /**
  * QueryCollectorTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class QueryCollectorTest extends TestCase
 {
     private QueryCollector $subject;

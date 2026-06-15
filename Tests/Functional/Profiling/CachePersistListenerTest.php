@@ -20,13 +20,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\AfterCachedPageIsPersistedEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
-
 /**
  * CachePersistListenerTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class CachePersistListenerTest extends FunctionalTestCase
 {
     protected bool $initializeDatabase = false;

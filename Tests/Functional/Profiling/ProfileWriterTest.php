@@ -23,13 +23,11 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 use function count;
 
-
 /**
  * ProfileWriterTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class ProfileWriterTest extends FunctionalTestCase
 {
     protected bool $initializeDatabase = false;
