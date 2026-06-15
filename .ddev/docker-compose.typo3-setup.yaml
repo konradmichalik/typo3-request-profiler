@@ -1,0 +1,20 @@
+## #ddev-generated
+services:
+    web:
+        environment:
+            - EXTENSION_KEY=typo3_request_profiler
+            - EXTENSION_NAME=typo3-request-profiler
+            - PACKAGE_NAME=konradmichalik/typo3-request-profiler
+            - TYPO3_VERSIONS=13 14
+            - SYMLINK_EXCLUSIONS=.* Documentation Documentation-GENERATED-temp var vendor public
+
+            # TYPO3 v13 and v14 config
+            - TYPO3_DB_DRIVER=mysqli
+            - TYPO3_DB_USERNAME=root
+            - TYPO3_DB_PASSWORD=root
+            - TYPO3_DB_HOST=db
+            - TYPO3_SETUP_ADMIN_EMAIL=admin@example.com
+            - TYPO3_SETUP_ADMIN_USERNAME=admin
+            - TYPO3_SETUP_ADMIN_PASSWORD=Password1!
+            - TYPO3_PROJECT_NAME=EXT:typo3-request-profiler Dev Environment
+            - TYPO3_SERVER_TYPE=apache
