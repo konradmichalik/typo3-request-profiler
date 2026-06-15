@@ -22,8 +22,12 @@
 		"typo3/cms-frontend": "^13.4 || ^14.0"
 	},
 	"require-dev": {
+		"eliashaeussler/version-bumper": "^4.0",
+		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
-		"typo3/cms-base-distribution": "^13.4 || ^14.0"
+		"typo3/cms-base-distribution": "^13.4 || ^14.0",
+		"typo3/cms-lowlevel": "^13.4 || ^14.0",
+		"typo3/testing-framework": "^8.2 || ^9.0"
 	},
 	"autoload": {
 		"psr-4": {
@@ -37,8 +41,15 @@
 	},
 	"config": {
 		"allow-plugins": {
+			"eliashaeussler/version-bumper": true,
+			"ergebnis/composer-normalize": true,
+			"helhum/dotenv-connector": true,
+			"php-http/discovery": true,
 			"typo3/class-alias-loader": true,
 			"typo3/cms-composer-installers": true
+		},
+		"audit": {
+			"block-insecure": false
 		},
 		"platform": {
 			"php": "8.2"
@@ -60,7 +71,9 @@
 			"@cgl install"
 		],
 		"cgl": "@composer -d Tests/CGL --",
-		"test": "@test:coverage --no-coverage",
-		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml"
+		"test": "@test:unit",
+		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml",
+		"test:functional": "phpunit -c FunctionalTests.xml",
+		"test:unit": "phpunit -c phpunit.xml --no-coverage"
 	}
 }
