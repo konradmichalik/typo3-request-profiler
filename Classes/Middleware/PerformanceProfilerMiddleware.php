@@ -13,32 +13,28 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Middleware;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
-use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Core\RequestId;
+use KonradMichalik\Typo3RequestProfiler\Profiling\{ProfileWriter, QueryCollector};
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
+use Throwable;
+use TYPO3\CMS\Core\Core\{Environment, RequestId};
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Wraps the frontend request with a wall-clock timer and persists a profile.
+ * PerformanceProfilerMiddleware.
  *
- * Dev-only and opt-out via TYPO3_REQUEST_PROFILER=0. Writing is fail-safe: any
- * error during profiling must never affect page delivery.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
-final class PerformanceProfilerMiddleware implements MiddlewareInterface
+final readonly class PerformanceProfilerMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly RequestId $requestId,
-        private readonly ProfileWriter $profileWriter,
+        private RequestId $requestId,
+        private ProfileWriter $profileWriter,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!Environment::getContext()->isDevelopment() || getenv('TYPO3_REQUEST_PROFILER') === '0') {
+        if (!Environment::getContext()->isDevelopment() || '0' === getenv('TYPO3_REQUEST_PROFILER')) {
             return $handler->handle($request);
         }
 
@@ -46,15 +42,22 @@ final class PerformanceProfilerMiddleware implements MiddlewareInterface
         $response = $handler->handle($request);
         $totalMs = (microtime(true) - $start) * 1000;
 
+        // Optional sampling: only persist requests at/above a minimum wall-clock
+        // time (TYPO3_REQUEST_PROFILER_MIN_MS), to focus on slow pages and keep
+        // the profile directory small. Default 0 = profile every request.
+        if ($totalMs < (float) getenv('TYPO3_REQUEST_PROFILER_MIN_MS')) {
+            return $response;
+        }
+
         try {
             $this->profileWriter->write(
                 $request,
                 $response,
-                (string)$this->requestId,
+                (string) $this->requestId,
                 GeneralUtility::makeInstance(QueryCollector::class),
                 $totalMs,
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Fail-safe: profiling must never break the response.
         }
 

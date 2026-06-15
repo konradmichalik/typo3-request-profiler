@@ -14,7 +14,7 @@ declare(strict_types=1);
 use KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine\ProfilingDriverMiddleware;
 use TYPO3\CMS\Core\Core\Environment;
 
-defined('TYPO3') or die();
+defined('TYPO3') || exit;
 
 // Dev-only: register the profiling Doctrine driver middleware. The sortable
 // array form is required on v13/v14 (the v12 string-switch API is not used).

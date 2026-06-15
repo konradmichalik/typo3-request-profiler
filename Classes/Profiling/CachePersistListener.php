@@ -18,13 +18,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\AfterCachedPageIsPersistedEvent;
 
 /**
- * The AfterCachedPageIsPersistedEvent fires only when cacheable content is
- * actually written to the page cache, i.e. on a cache MISS. We use that as the
- * "page was generated" signal. It deliberately does NOT fire for cached or
- * no_cache pages — the cache.cacheable flag in the profile disambiguates those
- * (see ProfileWriter).
+ * CachePersistListener.
  *
- * Verified against TYPO3 v13/v14: namespace TYPO3\CMS\Frontend\Event.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class CachePersistListener
 {
