@@ -1,0 +1,10 @@
+page = PAGE
+page {
+    10 = TEXT
+    10.value = <h1>Request Profiler — N+1 demo</h1><p>This page intentionally issues an N+1 query pattern. Inspect var/log/profiles/{request_id}.json.</p>
+
+    # USER_INT keeps this uncached so the N+1 queries run on every request and
+    # the profiler can record them.
+    20 = USER_INT
+    20.userFunc = Test\Sitepackage\ContentObject\NplusOneDemoRenderer->render
+}

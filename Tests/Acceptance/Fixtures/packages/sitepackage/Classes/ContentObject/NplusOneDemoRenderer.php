@@ -2,43 +2,57 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "typo3_request_profiler" TYPO3 CMS extension.
+ *
+ * (c) 2026 Konrad Michalik <km@move-elevator.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Test\Sitepackage\ContentObject;
 
+use TYPO3\CMS\Core\Attribute\AsAllowedCallable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
+use function sprintf;
+
 /**
- * Deliberately N+1: one COUNT query per page. Used as a USER_INT object so the
- * page stays uncached and the profiler records the repeated query on every FE
- * request. Drives the "slow page" acceptance scenario.
+ * NplusOneDemoRenderer.
+ *
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class NplusOneDemoRenderer
 {
+    private const LOOKUPS = 25;
+
     /**
      * @param array<string, mixed> $conf
      */
+    #[AsAllowedCallable]
     public function render(string $content, array $conf): string
     {
-        $pool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('pages');
 
-        $pages = $pool->getConnectionForTable('pages')
-            ->executeQuery('SELECT uid, title FROM pages WHERE deleted = 0 AND hidden = 0 ORDER BY uid')
-            ->fetchAllAssociative();
-
-        $items = [];
-        foreach ($pages as $page) {
-            // N+1: this query runs once per page instead of a single JOIN/GROUP BY.
-            $count = $pool->getConnectionForTable('tt_content')
-                ->executeQuery('SELECT COUNT(*) FROM tt_content WHERE pid = ' . (int)$page['uid'] . ' AND deleted = 0')
+        $titles = [];
+        for ($uid = 1; $uid <= self::LOOKUPS; ++$uid) {
+            // N+1: one round-trip per uid instead of a single IN () query.
+            $title = $connection
+                ->executeQuery('SELECT title FROM pages WHERE uid = '.$uid.' AND deleted = 0')
                 ->fetchOne();
 
-            $items[] = sprintf(
-                '<li>%s: %d content elements</li>',
-                htmlspecialchars((string)$page['title']),
-                (int)$count,
-            );
+            if (false !== $title) {
+                $titles[] = '<li>'.htmlspecialchars((string) $title).'</li>';
+            }
         }
 
-        return '<ul class="nplusone-demo">' . implode('', $items) . '</ul>';
+        return sprintf(
+            '<p>Ran %d single-row page lookups (N+1).</p><ul class="nplusone-demo">%s</ul>',
+            self::LOOKUPS,
+            implode('', $titles),
+        );
     }
 }
