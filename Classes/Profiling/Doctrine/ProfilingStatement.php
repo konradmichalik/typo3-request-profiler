@@ -14,15 +14,13 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine;
 
 use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
-use Doctrine\DBAL\Driver\Result;
-use Doctrine\DBAL\Driver\Statement;
+use Doctrine\DBAL\Driver\{Result, Statement};
 use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
 
 /**
- * Times prepared-statement executions — the path that surfaces N+1 patterns.
+ * ProfilingStatement.
  *
- * execute(): Result (no arguments) matches AbstractStatementMiddleware on both
- * DBAL 3.x (v13) and DBAL 4.x (v14).
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class ProfilingStatement extends AbstractStatementMiddleware
 {
@@ -36,11 +34,12 @@ final class ProfilingStatement extends AbstractStatementMiddleware
 
     public function execute(): Result
     {
+        $origin = QueryOrigin::capture();
         $start = microtime(true);
         try {
             return parent::execute();
         } finally {
-            $this->collector->addQuery($this->sql, (microtime(true) - $start) * 1000);
+            $this->collector->addQuery($this->sql, (microtime(true) - $start) * 1000, $origin);
         }
     }
 }

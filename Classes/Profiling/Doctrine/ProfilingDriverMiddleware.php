@@ -19,12 +19,9 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Entry point of the profiling Doctrine driver chain. Modelled after
- * \TYPO3\CMS\Adminpanel\Log\DoctrineSqlLoggingMiddleware.
+ * ProfilingDriverMiddleware.
  *
- * Registered via ext_localconf.php in the (sortable) driverMiddlewares array.
- * Doctrine instantiates this class itself, so the shared QueryCollector is
- * fetched via GeneralUtility::makeInstance() rather than constructor injection.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class ProfilingDriverMiddleware implements Middleware
 {

@@ -13,20 +13,14 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine;
 
-use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
+use Doctrine\DBAL\Driver\{Connection as ConnectionInterface, Result, Statement};
 use Doctrine\DBAL\Driver\Middleware\AbstractConnectionMiddleware;
-use Doctrine\DBAL\Driver\Result;
-use Doctrine\DBAL\Driver\Statement;
 use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
 
 /**
- * Times direct query()/exec() calls and wraps prepared statements.
+ * ProfilingConnection.
  *
- * Cross-version note (verified against DBAL 3.x/v13 and DBAL 4.x/v14):
- * - query(): Result and prepare(): Statement are identical on both majors.
- * - exec() returns int on DBAL 3 and int|string on DBAL 4. Declaring int here is
- *   covariant (a narrower subtype) against both parents; the explicit (int) cast
- *   guarantees the return value matches and never throws a TypeError.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class ProfilingConnection extends AbstractConnectionMiddleware
 {
@@ -44,21 +38,23 @@ final class ProfilingConnection extends AbstractConnectionMiddleware
 
     public function query(string $sql): Result
     {
+        $origin = QueryOrigin::capture();
         $start = microtime(true);
         try {
             return parent::query($sql);
         } finally {
-            $this->collector->addQuery($sql, (microtime(true) - $start) * 1000);
+            $this->collector->addQuery($sql, (microtime(true) - $start) * 1000, $origin);
         }
     }
 
     public function exec(string $sql): int
     {
+        $origin = QueryOrigin::capture();
         $start = microtime(true);
         try {
-            return (int)parent::exec($sql);
+            return (int) parent::exec($sql);
         } finally {
-            $this->collector->addQuery($sql, (microtime(true) - $start) * 1000);
+            $this->collector->addQuery($sql, (microtime(true) - $start) * 1000, $origin);
         }
     }
 }

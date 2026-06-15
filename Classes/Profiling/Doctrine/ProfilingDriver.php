@@ -20,10 +20,9 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
 use SensitiveParameter;
 
 /**
- * Wraps the platform driver so each opened connection becomes a ProfilingConnection.
+ * ProfilingDriver.
  *
- * The connect() signature matches AbstractDriverMiddleware on both DBAL 3.x (v13)
- * and DBAL 4.x (v14); #[SensitiveParameter] is accepted on both.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class ProfilingDriver extends AbstractDriverMiddleware
 {

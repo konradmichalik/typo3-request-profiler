@@ -16,30 +16,26 @@ namespace KonradMichalik\Typo3RequestProfiler\Profiling;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
- * Request-scoped sink for collected SQL queries and the cache-generation signal.
+ * QueryCollector.
  *
- * Registered as a TYPO3 singleton and always resolved via
- * GeneralUtility::makeInstance() so that the Doctrine driver chain (instantiated
- * by Doctrine, outside the DI container) and the DI-managed listener/middleware
- * share the exact same instance. This is why it is excluded from autowiring in
- * Services.yaml.
+ * @author Konrad Michalik <km@move-elevator.de>
  */
 final class QueryCollector implements SingletonInterface
 {
     /**
-     * @var list<array{sql: string, ms: float}>
+     * @var list<array{sql: string, ms: float, origin: string|null}>
      */
     private array $queries = [];
 
     private bool $pageGenerated = false;
 
-    public function addQuery(string $sql, float $ms): void
+    public function addQuery(string $sql, float $ms, ?string $origin = null): void
     {
-        $this->queries[] = ['sql' => $sql, 'ms' => $ms];
+        $this->queries[] = ['sql' => $sql, 'ms' => $ms, 'origin' => $origin];
     }
 
     /**
-     * @return list<array{sql: string, ms: float}>
+     * @return list<array{sql: string, ms: float, origin: string|null}>
      */
     public function getQueries(): array
     {
