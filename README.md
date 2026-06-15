@@ -16,7 +16,7 @@ A dev-only TYPO3 frontend request profiler. It instruments live frontend request
 > [!IMPORTANT]
 > This extension is **active only in a Development context** (`Environment::getContext()->isDevelopment()`). It registers no middleware and collects no data in production.
 
-**Key design:** the profiler is a thin, standalone collector with no external dependencies. The JSON profiles are designed to be consumed by AI coding assistants via [`konradmichalik/typo3-ai-mate`](https://github.com/konradmichalik/typo3-ai-mate) and its `typo3_performance` MCP tool, correlated by the shared `token`/`request_id`. Collect here — expose there.
+The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) — and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces — but records them as compact, machine-readable JSON instead of an interactive panel. The profiles are designed to be consumed by AI coding assistants via [`konradmichalik/typo3-ai-mate`](https://github.com/konradmichalik/typo3-ai-mate) and its `typo3_performance` MCP tool, correlated by the shared `token`/`request_id`. Collect here — expose there.
 
 > [!WARNING]
 > This package is in early development stage and may change significantly in the future. I am working steadily to release a stable version as soon as possible.
