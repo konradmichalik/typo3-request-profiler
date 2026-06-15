@@ -1,6 +1,5 @@
 /.Build/
 /.ddev/.env
-/composer.lock
 /public/
 /var/
 /vendor/
