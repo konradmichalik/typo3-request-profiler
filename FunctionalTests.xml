@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/typo3/testing-framework/Resources/Core/Build/FunctionalTestsBootstrap.php"
+         cacheResult="false"
+         colors="true"
+>
+    <php>
+        <!-- Database defaults for the DDEV environment; CI overrides via real env vars. -->
+        <env name="typo3DatabaseDriver" value="mysqli" />
+        <env name="typo3DatabaseHost" value="db" />
+        <env name="typo3DatabaseName" value="func_test" />
+        <env name="typo3DatabaseUsername" value="root" />
+        <env name="typo3DatabasePassword" value="root" />
+    </php>
+    <testsuites>
+        <testsuite name="Functional">
+            <directory>Tests/Functional</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>Classes</directory>
+        </include>
+    </source>
+</phpunit>

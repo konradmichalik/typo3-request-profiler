@@ -1,5 +1,7 @@
 includes:
 	- %rootDir%/../../konradmichalik/phpstan-typo3-preset/phpstan.neon.dist
+	- vendor/phpstan/phpstan-phpunit/extension.neon
+	- vendor/phpstan/phpstan-phpunit/rules.neon
 	- phpstan-baseline.neon
 
 parameters:
@@ -14,3 +16,11 @@ parameters:
 
 	type_coverage:
 		constant: 0 # TODO: Set to 100, when PHP 8.3 is minimum requirement
+
+	ignoreErrors:
+		# Tests legitimately toggle the trace flag via the environment.
+		-
+			message: '#^Calling putenv\(\) is forbidden, might overwrite existing variables\.$#'
+			paths:
+				- ../../Tests/Unit/Profiling/Doctrine/QueryOriginTest.php
+				- ../../Tests/Unit/Profiling/Doctrine/ProfilingConnectionTest.php
