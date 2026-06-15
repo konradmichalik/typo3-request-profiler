@@ -18,17 +18,25 @@ cd typo3-request-profiler
 # Install dependencies
 composer install
 
-# Set up the multi-version test environment
+# Set up the multi-version test environment (TYPO3 13 + 14)
 ddev add-on get konradmichalik/ddev-typo3-multi-version-extension
+# Limit TYPO3_VERSIONS to "13 14" in .ddev/docker-compose.typo3-setup.yaml
 ddev restart
 ddev install all
+ddev launch 13   # or: ddev launch 14
 ```
+
+The `Tests/Acceptance/Fixtures/packages/sitepackage` package contains a deliberate
+N+1 demo page for verifying the profiler end to end in the browser.
 
 ## Run tests & checks
 
 ```bash
 # Unit tests
 composer test
+
+# Functional tests (require a database; run inside DDEV)
+ddev exec "composer test:functional"
 
 # Coding standards, static analysis, rector (CGL)
 composer cgl install
