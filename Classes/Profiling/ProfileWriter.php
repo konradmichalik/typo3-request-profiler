@@ -34,12 +34,14 @@ final class ProfileWriter
     private const DEFAULT_MAX_PROFILES = 50;
     private const MAX_DUPLICATES = 20;
     private const MAX_SLOW_QUERIES = 5;
+    private const MAX_EVENTS = 20;
 
     public function write(
         ServerRequestInterface $request,
         ResponseInterface $response,
         string $token,
         QueryCollector $collector,
+        EventCollector $eventCollector,
         float $totalMs,
     ): void {
         $directory = Environment::getVarPath().'/log/profiles';
@@ -70,6 +72,13 @@ final class ProfileWriter
             'slow_queries' => $this->slowestQueries($queries),
             'duplicate_queries' => $stats['duplicates'],
         ];
+
+        // Only present when PSR-14 event profiling is active; an empty collector
+        // means the feature is off (opt-in), so the section is omitted as noise.
+        $events = $eventCollector->getEvents();
+        if ([] !== $events) {
+            $profile['events'] = $this->aggregateEvents($events);
+        }
 
         $page = $this->buildPage($request);
         if (null !== $page) {
@@ -190,6 +199,47 @@ final class ProfileWriter
             },
             array_slice($queries, 0, self::MAX_SLOW_QUERIES),
         );
+    }
+
+    /**
+     * Aggregate dispatched PSR-14 events by class (count + total_ms), exposing
+     * the most expensive ones — analogous to duplicate_queries.
+     *
+     * @param list<array{event: string, ms: float}> $events
+     *
+     * @return array{count: int, total_ms: float, top: list<array{event: string, count: int, total_ms: float}>}
+     */
+    public function aggregateEvents(array $events): array
+    {
+        $totalMs = 0.0;
+        /** @var array<string, array{event: string, count: int, total_ms: float}> $groups */
+        $groups = [];
+
+        foreach ($events as $event) {
+            $totalMs += $event['ms'];
+            $name = $event['event'];
+            if (!isset($groups[$name])) {
+                $groups[$name] = ['event' => $name, 'count' => 0, 'total_ms' => 0.0];
+            }
+            ++$groups[$name]['count'];
+            $groups[$name]['total_ms'] += $event['ms'];
+        }
+
+        $top = array_values($groups);
+        usort($top, static fn (array $a, array $b): int => $b['total_ms'] <=> $a['total_ms']);
+
+        return [
+            'count' => count($events),
+            'total_ms' => round($totalMs, 2),
+            'top' => array_map(
+                static fn (array $group): array => [
+                    'event' => $group['event'],
+                    'count' => $group['count'],
+                    'total_ms' => round($group['total_ms'], 2),
+                ],
+                array_slice($top, 0, self::MAX_EVENTS),
+            ),
+        ];
     }
 
     /**

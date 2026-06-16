@@ -11,6 +11,13 @@ services:
       - '../Classes/Profiling/Doctrine/*'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
       - '../Classes/Profiling/QueryCollector.php'
+      - '../Classes/Profiling/EventCollector.php'
 
   KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware:
     public: true
+
+  # Decorate the core PSR-14 dispatcher to time dispatched events (opt-in).
+  KonradMichalik\Typo3RequestProfiler\Profiling\ProfilingEventDispatcher:
+    decorates: Psr\EventDispatcher\EventDispatcherInterface
+    arguments:
+      $inner: '@.inner'
