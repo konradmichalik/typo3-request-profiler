@@ -58,9 +58,13 @@ The profiler is controlled entirely via environment variables:
 | `TYPO3_REQUEST_PROFILER_MIN_MS` | `0` | Only persist requests whose total time exceeds this threshold (ms). |
 | `TYPO3_REQUEST_PROFILER_KEEP` | `50` | Number of most-recent profiles to retain; older files are pruned automatically. |
 | `TYPO3_REQUEST_PROFILER_TRACE` | (off) | Set to `1` to capture the calling `Class::method (file:line)` for each query (added as `origin` to `slow_queries`/`duplicate_queries`). |
+| `TYPO3_REQUEST_PROFILER_EVENTS` | (off) | Set to `1` to time dispatched PSR-14 events and add an `events` section (count + the most expensive event classes). |
 
 > [!TIP]
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
+
+> [!TIP]
+> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted.
 
 ## 💡 Profile Format
 
@@ -83,9 +87,19 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   ],
   "duplicate_queries": [
     { "sql": "SELECT COUNT(*) FROM tt_content WHERE pid = ? AND deleted = ?", "count": 100, "total_ms": 31.4 }
-  ]
+  ],
+  "events": {
+    "count": 142,
+    "total_ms": 12.3,
+    "top": [
+      { "event": "TYPO3\\CMS\\Core\\Cache\\Event\\CacheFlushEvent", "count": 100, "total_ms": 8.1 }
+    ]
+  }
 }
 ```
+
+> [!NOTE]
+> The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1`.
 
 ## 🧑‍💻 Contributing
 
