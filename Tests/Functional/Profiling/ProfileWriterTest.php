@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\{ProfileWriter, QueryCollector};
+use KonradMichalik\Typo3RequestProfiler\Profiling\{EventCollector, ProfileWriter, QueryCollector};
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
@@ -55,7 +55,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $collector->addQuery('SELECT title FROM pages WHERE uid = 2', 0.5);
         $collector->addQuery('SELECT DATABASE()', 0.1);
 
-        $this->subject->write($request, new Response(), 'tok_main', $collector, 12.5);
+        $this->subject->write($request, new Response(), 'tok_main', $collector, new EventCollector(), 12.5);
 
         $profile = $this->readProfile('tok_main');
         self::assertSame('tok_main', $profile['token']);
@@ -79,7 +79,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $request = (new ServerRequest('https://example.com/', 'GET'))
             ->withAttribute('frontend.cache.instruction', $instruction);
 
-        $this->subject->write($request, new Response(), 'tok_uncached', new QueryCollector(), 5.0);
+        $this->subject->write($request, new Response(), 'tok_uncached', new QueryCollector(), new EventCollector(), 5.0);
 
         $profile = $this->readProfile('tok_uncached');
         self::assertFalse($profile['cache']['cacheable']);
@@ -98,6 +98,7 @@ final class ProfileWriterTest extends FunctionalTestCase
                     new Response(),
                     'keep_'.$i,
                     new QueryCollector(),
+                    new EventCollector(),
                     1.0,
                 );
             }
