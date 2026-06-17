@@ -92,6 +92,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $this->subject->write($request, new Response(), 'tok_main', 12.5);
 
         $profile = $this->readProfile('tok_main');
+        self::assertSame(ProfileWriter::SCHEMA_VERSION, $profile['schemaVersion']);
         self::assertSame('tok_main', $profile['token']);
         self::assertSame(42, $profile['page']['id']);
         self::assertSame(12.5, $profile['timing']['total_ms']);
@@ -122,7 +123,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $this->subject->write($request, new Response(), 'tok_order', 1.0);
 
         self::assertSame(
-            ['token', 'time', 'method', 'url', 'status', 'page', 'cache', 'timing', 'memory', 'php', 'queries', 'slow_queries', 'duplicate_queries', 'log'],
+            ['schemaVersion', 'token', 'time', 'method', 'url', 'status', 'page', 'cache', 'timing', 'memory', 'php', 'queries', 'slow_queries', 'duplicate_queries', 'log'],
             array_keys($this->readProfile('tok_order')),
         );
     }

@@ -30,6 +30,12 @@ use function iterator_to_array;
  */
 final readonly class ProfileWriter
 {
+    /**
+     * Schema version of the written profile artifact. Increment whenever
+     * top-level field or section names/shapes change in a breaking way.
+     */
+    public const SCHEMA_VERSION = 1;
+
     private const DEFAULT_MAX_PROFILES = 50;
 
     /**
@@ -39,18 +45,30 @@ final readonly class ProfileWriter
         private iterable $sections,
     ) {}
 
+    /**
+     * The single source of truth for where profiles live: the directory the
+     * writer persists to and that TYPO3-side {@see ProfileReader} callers read
+     * from. Keeps the (TYPO3-specific) path resolution on the writer side so
+     * the reader itself stays framework-agnostic.
+     */
+    public static function defaultDirectory(): string
+    {
+        return Environment::getVarPath().'/log/profiles';
+    }
+
     public function write(
         ServerRequestInterface $request,
         ResponseInterface $response,
         string $token,
         float $totalMs,
     ): void {
-        $directory = Environment::getVarPath().'/log/profiles';
+        $directory = self::defaultDirectory();
         GeneralUtility::mkdir_deep($directory);
 
         $context = new ProfileContext($request, $response, $token, $totalMs);
 
         $profile = [
+            'schemaVersion' => self::SCHEMA_VERSION,
             'token' => $token,
             'time' => date('c'),
             'method' => $request->getMethod(),

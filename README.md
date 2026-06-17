@@ -86,6 +86,7 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
 
 ```json
 {
+  "schemaVersion": 1,
   "token": "<RequestId>",
   "time": "2026-06-15T10:00:00+00:00",
   "method": "GET",
@@ -125,6 +126,52 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
 
 > [!NOTE]
 > The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1`.
+
+### Profile schema
+
+The artifact carries an explicit, versioned schema contract via the top-level
+`schemaVersion` field. It is written first so it is immediately visible in every file.
+
+**Top-level fields** (always present):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schemaVersion` | int | Schema contract version of the artifact (currently `1`). |
+| `token` | string | Request identifier; also the file name. |
+| `time` | string | Request time as ISO 8601 (`date('c')`). |
+| `method` | string | HTTP request method. |
+| `url` | string | Full request URI. |
+| `status` | int | HTTP response status code. |
+
+**Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
+
+| Key | Shape |
+|-----|-------|
+| `page` | `{ id, type }` |
+| `cache` | `{ hit, cacheable, disabled_reasons[] }` |
+| `timing` | `{ total_ms }` |
+| `memory` | `{ peak_mb }` |
+| `php` | `{ included_files }` |
+| `queries` | `{ count, total_ms }` |
+| `slow_queries` | `[{ sql, ms, origin? }]` |
+| `duplicate_queries` | `[{ sql, count, total_ms, origin? }]` |
+| `log` | `{ count, by_level{}, top_components[{ component, count }] }` |
+| `events` | `{ count, total_ms, top[{ event, count, total_ms }] }` |
+
+> [!NOTE]
+> `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.
+
+### Reading profiles
+
+`KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader` is the supported, framework-agnostic read API for these artifacts — external consumers should use it instead of re-implementing the `glob`/sort/`json_decode` logic:
+
+| Method | Returns |
+|--------|---------|
+| `all()` | All profiles, newest first. |
+| `latest(int $limit = 10)` | The `$limit` newest profiles, newest first. |
+| `byToken(string $token)` | A single profile by its token, or `null` if unknown. |
+
+The reader is directory-based and carries no framework dependency — its constructor takes the profiles directory (`new ProfileReader($directory)`). On the TYPO3 side, that directory is `ProfileWriter::defaultDirectory()` (the same source the writer persists to). Its public signature is kept stable as a contract for consumers.
 
 ## 🧑‍💻 Contributing
 
