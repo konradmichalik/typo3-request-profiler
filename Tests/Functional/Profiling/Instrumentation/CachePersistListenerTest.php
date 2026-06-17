@@ -11,9 +11,10 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
+namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling\Instrumentation;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\{CachePersistListener, QueryCollector};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\CachePersistListener;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Utility\GeneralUtility;

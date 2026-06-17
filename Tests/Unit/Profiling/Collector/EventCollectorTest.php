@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling;
+namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Collector;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\EventCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\EventCollector;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

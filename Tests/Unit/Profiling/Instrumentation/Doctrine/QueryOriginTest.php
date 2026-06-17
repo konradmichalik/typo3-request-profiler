@@ -11,9 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Doctrine;
+namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentation\Doctrine;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine\QueryOrigin;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\QueryOrigin;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 

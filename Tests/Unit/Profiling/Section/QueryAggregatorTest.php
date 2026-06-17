@@ -11,24 +11,38 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling;
+namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\QueryAggregator;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 
 /**
- * ProfileWriterTest.
+ * QueryAggregatorTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
-final class ProfileWriterTest extends TestCase
+final class QueryAggregatorTest extends TestCase
 {
-    private ProfileWriter $subject;
+    private QueryAggregator $subject;
 
     protected function setUp(): void
     {
-        $this->subject = new ProfileWriter();
+        $this->subject = new QueryAggregator();
+    }
+
+    #[Test]
+    public function applicationQueriesDropsInfrastructureIntrospection(): void
+    {
+        $collector = new QueryCollector();
+        $collector->addQuery('SELECT title FROM pages WHERE uid = 1', 0.5);
+        $collector->addQuery('SELECT DATABASE()', 0.1);
+
+        $queries = $this->subject->applicationQueries($collector);
+
+        self::assertCount(1, $queries);
+        self::assertSame('SELECT title FROM pages WHERE uid = 1', $queries[0]['sql']);
     }
 
     #[Test]
@@ -192,65 +206,5 @@ final class ProfileWriterTest extends TestCase
         ]);
 
         self::assertSame('App\\Repo::find (Repo.php:88)', $result[0]['origin'] ?? null);
-    }
-
-    #[Test]
-    public function aggregateEventsSumsCountAndTimePerEventClass(): void
-    {
-        $events = [];
-        for ($i = 0; $i < 100; ++$i) {
-            $events[] = ['event' => 'Core\\Cache\\Event\\Persist', 'ms' => 0.1];
-        }
-        $events[] = ['event' => 'Core\\Routing\\Event\\Match', 'ms' => 2.0];
-
-        $result = $this->subject->aggregateEvents($events);
-
-        self::assertSame(101, $result['count']);
-        self::assertEqualsWithDelta(12.0, $result['total_ms'], 0.001);
-        self::assertCount(2, $result['top']);
-        self::assertSame('Core\\Cache\\Event\\Persist', $result['top'][0]['event']);
-        self::assertSame(100, $result['top'][0]['count']);
-        self::assertEqualsWithDelta(10.0, $result['top'][0]['total_ms'], 0.001);
-        self::assertSame('Core\\Routing\\Event\\Match', $result['top'][1]['event']);
-        self::assertSame(1, $result['top'][1]['count']);
-    }
-
-    #[Test]
-    public function aggregateEventsSortsTopByTotalTimeDescending(): void
-    {
-        $events = [
-            ['event' => 'A', 'ms' => 1.0],
-            ['event' => 'B', 'ms' => 5.0],
-            ['event' => 'C', 'ms' => 3.0],
-        ];
-
-        $result = $this->subject->aggregateEvents($events);
-
-        self::assertSame(['B', 'C', 'A'], array_column($result['top'], 'event'));
-    }
-
-    #[Test]
-    public function aggregateEventsCapsTopAtTwenty(): void
-    {
-        $events = [];
-        for ($i = 0; $i < 30; ++$i) {
-            $events[] = ['event' => 'Event'.$i, 'ms' => (float) $i];
-        }
-
-        $result = $this->subject->aggregateEvents($events);
-
-        self::assertSame(30, $result['count']);
-        self::assertCount(20, $result['top']);
-        self::assertSame('Event29', $result['top'][0]['event']);
-    }
-
-    #[Test]
-    public function aggregateEventsHandlesEmptyList(): void
-    {
-        $result = $this->subject->aggregateEvents([]);
-
-        self::assertSame(0, $result['count']);
-        self::assertSame(0.0, $result['total_ms']);
-        self::assertSame([], $result['top']);
     }
 }

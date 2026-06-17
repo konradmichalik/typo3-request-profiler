@@ -11,12 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Doctrine;
+namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentation\Doctrine;
 
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\Connection;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine\{ProfilingConnection, ProfilingDriver, ProfilingDriverMiddleware};
-use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\{ProfilingConnection, ProfilingDriver, ProfilingDriverMiddleware};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
