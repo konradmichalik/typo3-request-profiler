@@ -16,7 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling\Instrum
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\CachePersistListener;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\CMS\Core\Http\ServerRequest;
+use ReflectionClass;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\AfterCachedPageIsPersistedEvent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -36,12 +36,9 @@ final class CachePersistListenerTest extends FunctionalTestCase
         $collector = new QueryCollector();
         GeneralUtility::setSingletonInstance(QueryCollector::class, $collector);
 
-        $event = new AfterCachedPageIsPersistedEvent(
-            new ServerRequest('https://example.com/', 'GET'),
-            'cache-identifier',
-            [],
-            3600,
-        );
+        // The listener ignores the event payload, so build it without invoking
+        // the constructor — its signature differs between TYPO3 v13 and v14.
+        $event = (new ReflectionClass(AfterCachedPageIsPersistedEvent::class))->newInstanceWithoutConstructor();
 
         (new CachePersistListener())($event);
 
