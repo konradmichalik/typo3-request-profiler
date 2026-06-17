@@ -30,6 +30,12 @@ use function iterator_to_array;
  */
 final readonly class ProfileWriter
 {
+    /**
+     * Schema version of the written profile artifact. Increment whenever
+     * top-level field or section names/shapes change in a breaking way.
+     */
+    public const SCHEMA_VERSION = 1;
+
     private const DEFAULT_MAX_PROFILES = 50;
 
     /**
@@ -51,6 +57,7 @@ final readonly class ProfileWriter
         $context = new ProfileContext($request, $response, $token, $totalMs);
 
         $profile = [
+            'schemaVersion' => self::SCHEMA_VERSION,
             'token' => $token,
             'time' => date('c'),
             'method' => $request->getMethod(),
