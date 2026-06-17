@@ -55,6 +55,13 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 composer require --dev konradmichalik/typo3-request-profiler
 ```
 
+### TER
+
+[![TER version](https://typo3-badges.dev/badge/typo3_request_profiler/version/shields.svg)](https://extensions.typo3.org/extension/typo3_request_profiler)
+[![TER downloads](https://typo3-badges.dev/badge/typo3_request_profiler/downloads/shields.svg)](https://extensions.typo3.org/extension/typo3_request_profiler)
+
+Download the zip file from [TYPO3 extension repository (TER)](https://extensions.typo3.org/extension/typo3_request_profiler).
+
 ## ⚙️ Configuration
 
 The profiler is controlled entirely via environment variables:
