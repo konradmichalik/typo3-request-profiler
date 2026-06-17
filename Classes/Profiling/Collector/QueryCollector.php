@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Profiling;
+namespace KonradMichalik\Typo3RequestProfiler\Profiling\Collector;
 
 use TYPO3\CMS\Core\SingletonInterface;
 

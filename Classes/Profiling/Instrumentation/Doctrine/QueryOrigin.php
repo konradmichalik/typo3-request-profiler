@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine;
+namespace KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine;
 
 /**
  * QueryOrigin.
@@ -28,7 +28,7 @@ final class QueryOrigin
      */
     private const PLUMBING = [
         'Doctrine\\',
-        'KonradMichalik\\Typo3RequestProfiler\\Profiling\\Doctrine\\',
+        'KonradMichalik\\Typo3RequestProfiler\\Profiling\\Instrumentation\\Doctrine\\',
         'TYPO3\\CMS\\Core\\Database\\',
     ];
 

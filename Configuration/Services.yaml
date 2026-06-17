@@ -4,20 +4,32 @@ services:
     autoconfigure: true
     public: false
 
+  _instanceof:
+    # Every section registers itself for the ProfileWriter via this tag.
+    KonradMichalik\Typo3RequestProfiler\Profiling\Section\ProfileSection:
+      tags: ['typo3_request_profiler.profile_section']
+
   KonradMichalik\Typo3RequestProfiler\:
     resource: '../Classes/*'
     exclude:
       # Instantiated by Doctrine outside the container; args are not autowirable.
-      - '../Classes/Profiling/Doctrine/*'
+      - '../Classes/Profiling/Instrumentation/Doctrine/*'
+      # Instantiated by the logging framework outside the container.
+      - '../Classes/Profiling/Instrumentation/Log/*'
+      # Plain request-scoped DTO, not a service.
+      - '../Classes/Profiling/Section/ProfileContext.php'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
-      - '../Classes/Profiling/QueryCollector.php'
-      - '../Classes/Profiling/EventCollector.php'
+      - '../Classes/Profiling/Collector/*'
 
   KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware:
     public: true
 
+  KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter:
+    arguments:
+      $sections: !tagged_iterator typo3_request_profiler.profile_section
+
   # Decorate the core PSR-14 dispatcher to time dispatched events (opt-in).
-  KonradMichalik\Typo3RequestProfiler\Profiling\ProfilingEventDispatcher:
+  KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\ProfilingEventDispatcher:
     decorates: Psr\EventDispatcher\EventDispatcherInterface
     arguments:
       $inner: '@.inner'

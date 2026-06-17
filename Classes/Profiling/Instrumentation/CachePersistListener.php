@@ -11,8 +11,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Profiling;
+namespace KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation;
 
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
 use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Event\AfterCachedPageIsPersistedEvent;

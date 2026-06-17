@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Middleware;
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\{EventCollector, ProfileWriter, QueryCollector};
+use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Throwable;
 use TYPO3\CMS\Core\Core\{Environment, RequestId};
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * PerformanceProfilerMiddleware.
@@ -54,8 +53,6 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
                 $request,
                 $response,
                 (string) $this->requestId,
-                GeneralUtility::makeInstance(QueryCollector::class),
-                GeneralUtility::makeInstance(EventCollector::class),
                 $totalMs,
             );
         } catch (Throwable) {

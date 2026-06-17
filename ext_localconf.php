@@ -11,19 +11,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-use KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine\ProfilingDriverMiddleware;
+use KonradMichalik\Typo3RequestProfiler\Configuration;
 use TYPO3\CMS\Core\Core\Environment;
 
 defined('TYPO3') || exit;
 
-// Dev-only: register the profiling Doctrine driver middleware. The sortable
-// array form is required on v13/v14 (the v12 string-switch API is not used).
+// Dev-only: profiling instrumentation must never touch production requests.
 if (Environment::getContext()->isDevelopment()) {
-    $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['driverMiddlewares']['typo3_request_profiler/profiling'] = [
-        'target' => ProfilingDriverMiddleware::class,
-        'after' => [
-            'typo3/core/custom-platform-driver-middleware',
-            'typo3/core/custom-pdo-driver-result-middleware',
-        ],
-    ];
+    Configuration::registerProfilingDriverMiddleware();
+    Configuration::registerProfilingLogWriter();
 }

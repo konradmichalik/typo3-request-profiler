@@ -11,11 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace KonradMichalik\Typo3RequestProfiler\Profiling\Doctrine;
+namespace KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine;
 
 use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
 use Doctrine\DBAL\Driver\{Result, Statement};
-use KonradMichalik\Typo3RequestProfiler\Profiling\QueryCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
 
 /**
  * ProfilingStatement.
