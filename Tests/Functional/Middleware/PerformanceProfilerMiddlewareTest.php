@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of the "typo3_request_profiler" TYPO3 CMS extension.
  *
- * (c) 2026 Konrad Michalik <km@move-elevator.de>
+ * (c) 2026 Konrad Michalik <hej@konradmichalik.dev>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -25,7 +25,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 /**
  * PerformanceProfilerMiddlewareTest.
  *
- * @author Konrad Michalik <km@move-elevator.de>
+ * @author Konrad Michalik <hej@konradmichalik.dev>
  */
 final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
 {
