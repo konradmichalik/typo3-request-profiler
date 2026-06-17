@@ -1,11 +1,14 @@
 <div align="center">
 
+![Extension icon](Resources/Public/Icons/Extension.png)
+
 # TYPO3 extension `typo3_request_profiler`
 
 [![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-request-profiler?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-request-profiler?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
+[![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-request-profiler?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
 [![Tests](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/tests.yml?label=tests&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE.md)
 
@@ -43,6 +46,9 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 | 0.x         | 13-14     | 8.2-8.5 |
 
 ### Composer
+
+[![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-request-profiler?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-request-profiler?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 
 ```bash
 composer require --dev konradmichalik/typo3-request-profiler
