@@ -26,9 +26,10 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 
 **What it captures per request:**
 
-- Wall-clock and SQL timing, peak memory usage
+- Wall-clock and SQL timing, peak memory usage, included PHP file count
 - Full query count + top slow queries + N+1 duplicate detection
 - Cache hit/miss state with disabled reasons
+- Log activity per request (count by level + noisiest components)
 - Optional call-site origin (`Class::method (file:line)`) for every flagged query
 
 ## 🔥 Installation
@@ -87,6 +88,7 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "cache": { "hit": false, "cacheable": false, "disabled_reasons": ["&no_cache=1 query parameter was given"] },
   "timing": { "total_ms": 142.5 },
   "memory": { "peak_mb": 16.1 },
+  "php": { "included_files": 432 },
   "queries": { "count": 101, "total_ms": 38.2 },
   "slow_queries": [
     { "sql": "SELECT * FROM pages WHERE slug = ? ORDER BY slug desc", "ms": 12.4 }
@@ -94,6 +96,13 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "duplicate_queries": [
     { "sql": "SELECT COUNT(*) FROM tt_content WHERE pid = ? AND deleted = ?", "count": 100, "total_ms": 31.4 }
   ],
+  "log": {
+    "count": 3,
+    "by_level": { "warning": 2, "notice": 1 },
+    "top_components": [
+      { "component": "TYPO3.CMS.Core.Authentication.BackendUserAuthentication", "count": 2 }
+    ]
+  },
   "events": {
     "count": 142,
     "total_ms": 12.3,
@@ -103,6 +112,9 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   }
 }
 ```
+
+> [!NOTE]
+> The `log` section only appears when the request produced log entries. Only the level and component are recorded — never the message body — so no user data leaks into the profile.
 
 > [!NOTE]
 > The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1`.
