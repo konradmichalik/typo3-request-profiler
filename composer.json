@@ -72,8 +72,17 @@
 			"@cgl install"
 		],
 		"cgl": "@composer -d Tests/CGL --",
-		"test": "@test:unit",
-		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml",
+		"test": [
+			"@test:unit",
+			"@test:functional"
+		],
+		"test:coverage": [
+			"@putenv XDEBUG_MODE=coverage",
+			"phpunit -c phpunit.xml --coverage-php=.Build/coverage/cov/unit.cov",
+			"phpunit -c FunctionalTests.xml --coverage-php=.Build/coverage/cov/functional.cov",
+			"phpcov merge --clover=.Build/coverage/clover.xml --html=.Build/coverage/html --text=php://stdout .Build/coverage/cov"
+		],
+		"test:coverage:unit": "phpunit -c phpunit.xml",
 		"test:functional": "phpunit -c FunctionalTests.xml",
 		"test:unit": "phpunit -c phpunit.xml --no-coverage"
 	}

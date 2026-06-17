@@ -1,8 +1,12 @@
 name: typo3-request-profiler
 type: php
 docroot: .Build
-php_version: "8.3"
+php_version: "8.2"
 webserver_type: apache-fpm
+# PCOV provides fast code coverage without having to toggle Xdebug on.
+# PHPUnit auto-detects it, so `composer test:coverage` needs no XDEBUG_MODE.
+webimage_extra_packages:
+  - php8.2-pcov
 database:
   type: mariadb
   version: "10.11"
