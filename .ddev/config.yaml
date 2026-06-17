@@ -9,6 +9,7 @@ database:
 use_dns_when_possible: true
 web_environment:
   - TYPO3_CONTEXT=Development
+  - TYPO3_REQUEST_PROFILER_EVENTS=1
 hooks:
   post-start:
     - exec: composer install --no-scripts
