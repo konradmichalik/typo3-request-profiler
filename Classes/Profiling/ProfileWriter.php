@@ -45,13 +45,24 @@ final readonly class ProfileWriter
         private iterable $sections,
     ) {}
 
+    /**
+     * The single source of truth for where profiles live: the directory the
+     * writer persists to and that TYPO3-side {@see ProfileReader} callers read
+     * from. Keeps the (TYPO3-specific) path resolution on the writer side so
+     * the reader itself stays framework-agnostic.
+     */
+    public static function defaultDirectory(): string
+    {
+        return Environment::getVarPath().'/log/profiles';
+    }
+
     public function write(
         ServerRequestInterface $request,
         ResponseInterface $response,
         string $token,
         float $totalMs,
     ): void {
-        $directory = Environment::getVarPath().'/log/profiles';
+        $directory = self::defaultDirectory();
         GeneralUtility::mkdir_deep($directory);
 
         $context = new ProfileContext($request, $response, $token, $totalMs);

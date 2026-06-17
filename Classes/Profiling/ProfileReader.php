@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Profiling;
 
 use JsonException;
-use TYPO3\CMS\Core\Core\Environment;
 
 use function array_slice;
 use function is_array;
@@ -26,7 +25,7 @@ use function is_array;
  */
 final readonly class ProfileReader
 {
-    public function __construct(private ?string $directory = null) {}
+    public function __construct(private string $directory) {}
 
     /**
      * Newest profiles first.
@@ -65,14 +64,9 @@ final readonly class ProfileReader
             return null;
         }
 
-        $file = $this->directory().'/'.$token.'.json';
+        $file = $this->directory.'/'.$token.'.json';
 
         return is_file($file) ? $this->decode($file) : null;
-    }
-
-    private function directory(): string
-    {
-        return $this->directory ?? Environment::getVarPath().'/log/profiles';
     }
 
     /**
@@ -80,7 +74,7 @@ final readonly class ProfileReader
      */
     private function sortedFiles(): array
     {
-        $files = glob($this->directory().'/*.json') ?: [];
+        $files = glob($this->directory.'/*.json') ?: [];
         usort($files, static fn (string $a, string $b): int => (int) filemtime($b) <=> (int) filemtime($a));
 
         return $files;

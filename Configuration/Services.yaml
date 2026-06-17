@@ -18,6 +18,8 @@ services:
       - '../Classes/Profiling/Instrumentation/Log/*'
       # Plain request-scoped DTO, not a service.
       - '../Classes/Profiling/Section/ProfileContext.php'
+      # Value-constructed read API (required $directory is not autowirable).
+      - '../Classes/Profiling/ProfileReader.php'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
       - '../Classes/Profiling/Collector/*'
 
