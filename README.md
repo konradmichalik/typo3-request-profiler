@@ -161,6 +161,18 @@ The artifact carries an explicit, versioned schema contract via the top-level
 > [!NOTE]
 > `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.
 
+### Reading profiles
+
+`KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader` is the supported, framework-agnostic read API for these artifacts — external consumers should use it instead of re-implementing the `glob`/sort/`json_decode` logic:
+
+| Method | Returns |
+|--------|---------|
+| `all()` | All profiles, newest first. |
+| `latest(int $limit = 10)` | The `$limit` newest profiles, newest first. |
+| `byToken(string $token)` | A single profile by its token, or `null` if unknown. |
+
+The reader is directory-based and carries no framework dependency — its constructor takes the profiles directory (`new ProfileReader($directory)`). On the TYPO3 side, that directory is `ProfileWriter::defaultDirectory()` (the same source the writer persists to). Its public signature is kept stable as a contract for consumers.
+
 ## 🧑‍💻 Contributing
 
 Please have a look at [`CONTRIBUTING.md`](CONTRIBUTING.md).
