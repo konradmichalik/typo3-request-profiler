@@ -13,11 +13,12 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Middleware;
 
+use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Throwable;
-use TYPO3\CMS\Core\Core\{Environment, RequestId};
+use TYPO3\CMS\Core\Core\RequestId;
 
 /**
  * PerformanceProfilerMiddleware.
@@ -33,7 +34,7 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!Environment::getContext()->isDevelopment() || '0' === getenv('TYPO3_REQUEST_PROFILER')) {
+        if (!Configuration::isProfilingActive() || '0' === getenv('TYPO3_REQUEST_PROFILER')) {
             return $handler->handle($request);
         }
 

@@ -19,6 +19,7 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingL
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 
 use function is_array;
@@ -45,6 +46,41 @@ final class ConfigurationTest extends TestCase
     protected function tearDown(): void
     {
         $GLOBALS['TYPO3_CONF_VARS'] = $this->backup;
+        putenv('TYPO3_REQUEST_PROFILER_FORCE');
+    }
+
+    #[Test]
+    public function isProfilingActiveIsTrueInDevelopmentContext(): void
+    {
+        $this->reinitialiseContext('Development');
+
+        self::assertTrue(Configuration::isProfilingActive());
+    }
+
+    #[Test]
+    public function isProfilingActiveIsFalseOutsideDevelopmentWithoutForce(): void
+    {
+        $this->reinitialiseContext('Production');
+
+        self::assertFalse(Configuration::isProfilingActive());
+    }
+
+    #[Test]
+    public function isProfilingActiveIsTrueOutsideDevelopmentWhenForced(): void
+    {
+        $this->reinitialiseContext('Production');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
+
+        self::assertTrue(Configuration::isProfilingActive());
+    }
+
+    #[Test]
+    public function isProfilingActiveIsFalseOutsideDevelopmentWhenForceIsNotExactlyOne(): void
+    {
+        $this->reinitialiseContext('Production');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE=true');
+
+        self::assertFalse(Configuration::isProfilingActive());
     }
 
     #[Test]
@@ -95,6 +131,25 @@ final class ConfigurationTest extends TestCase
         Configuration::registerProfilingLogWriter();
 
         self::assertSame('not-an-array', $GLOBALS['TYPO3_CONF_VARS']);
+    }
+
+    /**
+     * The unit bootstrap does not initialise the Environment, so set up the
+     * requested application context with throwaway paths.
+     */
+    private function reinitialiseContext(string $context): void
+    {
+        Environment::initialize(
+            new ApplicationContext($context),
+            true,
+            true,
+            '/tmp',
+            '/tmp',
+            '/tmp',
+            '/tmp',
+            '/tmp/cli',
+            'UNIX',
+        );
     }
 
     /**

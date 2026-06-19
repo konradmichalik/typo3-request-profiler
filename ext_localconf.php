@@ -12,12 +12,13 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3RequestProfiler\Configuration;
-use TYPO3\CMS\Core\Core\Environment;
 
 defined('TYPO3') || exit;
 
-// Dev-only: profiling instrumentation must never touch production requests.
-if (Environment::getContext()->isDevelopment()) {
+// Development always, every other context only via explicit opt-in. Evaluated
+// here (and therefore cached), so toggling FORCE requires a cache flush.
+if (Configuration::isProfilingActive()) {
+    Configuration::warnIfForcedOutsideDevelopment();
     Configuration::registerProfilingDriverMiddleware();
     Configuration::registerProfilingLogWriter();
 }
