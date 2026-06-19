@@ -16,7 +16,9 @@ namespace KonradMichalik\Typo3RequestProfiler;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
 use Psr\Log\LogLevel;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
 
 use function is_array;
 
@@ -30,6 +32,44 @@ class Configuration
 {
     final public const EXT_KEY = 'typo3_request_profiler';
     final public const EXT_NAME = 'Typo3RequestProfiler';
+
+    /**
+     * Deployment-level switch: profiling is always active in the Development
+     * context, and in any other context only via the explicit
+     * TYPO3_REQUEST_PROFILER_FORCE=1 opt-in. Everywhere else it stays off.
+     */
+    public static function isProfilingActive(): bool
+    {
+        if (Environment::getContext()->isDevelopment()) {
+            return true;
+        }
+
+        return '1' === getenv('TYPO3_REQUEST_PROFILER_FORCE');
+    }
+
+    /**
+     * Emit a warning when profiling is force-enabled outside the Development
+     * context. Called from ext_localconf.php, which is cached, so this fires
+     * only on cache (re)build instead of on every request.
+     */
+    public static function warnIfForcedOutsideDevelopment(): void
+    {
+        if (Environment::getContext()->isDevelopment()) {
+            return;
+        }
+
+        if ('1' !== getenv('TYPO3_REQUEST_PROFILER_FORCE')) {
+            return;
+        }
+
+        GeneralUtility::makeInstance(LogManager::class)
+            ->getLogger(self::class)
+            ->warning(
+                'Request profiling is force-enabled outside the Development context '
+                .'via TYPO3_REQUEST_PROFILER_FORCE. This is meant for staging only — '
+                .'never enable it in real production.',
+            );
+    }
 
     /**
      * Register the profiling Doctrine driver middleware. The sortable array form

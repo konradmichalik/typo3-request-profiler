@@ -69,10 +69,14 @@ The profiler is controlled entirely via environment variables:
 | Variable | Default | Effect |
 |----------|---------|--------|
 | `TYPO3_REQUEST_PROFILER` | (on) | Set to `0` to disable profiling for a request/process. |
+| `TYPO3_REQUEST_PROFILER_FORCE` | (off) | Set to `1` to enable profiling outside the Development context (e.g. staging). Must be set deliberately, never in real production. |
 | `TYPO3_REQUEST_PROFILER_MIN_MS` | `0` | Only persist requests whose total time exceeds this threshold (ms). |
 | `TYPO3_REQUEST_PROFILER_KEEP` | `50` | Number of most-recent profiles to retain; older files are pruned automatically. |
 | `TYPO3_REQUEST_PROFILER_TRACE` | (off) | Set to `1` to capture the calling `Class::method (file:line)` for each query (added as `origin` to `slow_queries`/`duplicate_queries`). |
 | `TYPO3_REQUEST_PROFILER_EVENTS` | (off) | Set to `1` to time dispatched PSR-14 events and add an `events` section (count + the most expensive event classes). |
+
+> [!NOTE]
+> `TYPO3_REQUEST_PROFILER_FORCE` is a deployment-level switch evaluated in `ext_localconf.php` and therefore **cached** — it is not a live toggle. Changing it requires a cache flush to take effect. This is in contrast to the per-request `TYPO3_REQUEST_PROFILER=0`, which short-circuits the middleware on each request and needs no cache flush.
 
 > [!TIP]
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
