@@ -17,12 +17,9 @@
 A _dev-only_ TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request — SQL queries, N+1 patterns, cache state, and timing — to `var/log/profiles/{request_id}.json`.
 
 > [!IMPORTANT]
-> This extension is **active only in a Development context** (`Environment::getContext()->isDevelopment()`). It registers no middleware and collects no data in production.
+> This extension is **active by default only in a Development context** (`Environment::getContext()->isDevelopment()`). Outside Development it stays off and collects no data unless explicitly opted in via `TYPO3_REQUEST_PROFILER_FORCE=1` (intended for staging, never real production — see [Configuration](#-configuration)).
 
 The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) — and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces — but records them as compact, machine-readable JSON instead of an interactive panel.
-
-> [!WARNING]
-> This package is in early development stage and may change significantly in the future. I am working steadily to release a stable version as soon as possible.
 
 **What it captures per request:**
 
@@ -39,12 +36,6 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 * TYPO3 13.4 LTS & 14.0+
 * PHP 8.2+
 * Doctrine DBAL 3.x or 4.x
-
-### Supports
-
-| **Version** | **TYPO3** | **PHP** |
-|-------------|-----------|---------|
-| 0.x         | 13-14     | 8.2-8.5 |
 
 ### Composer
 
