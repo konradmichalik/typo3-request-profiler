@@ -20,7 +20,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
-use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Log\{LogManager, Logger};
+use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
 
 use function is_array;
 
@@ -47,6 +48,7 @@ final class ConfigurationTest extends TestCase
     {
         $GLOBALS['TYPO3_CONF_VARS'] = $this->backup;
         putenv('TYPO3_REQUEST_PROFILER_FORCE');
+        GeneralUtility::purgeInstances();
     }
 
     #[Test]
@@ -81,6 +83,46 @@ final class ConfigurationTest extends TestCase
         putenv('TYPO3_REQUEST_PROFILER_FORCE=true');
 
         self::assertFalse(Configuration::isProfilingActive());
+    }
+
+    #[Test]
+    public function warnIfForcedOutsideDevelopmentDoesNothingInDevelopmentContext(): void
+    {
+        $this->reinitialiseContext('Development');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects(self::never())->method('warning');
+        GeneralUtility::setSingletonInstance(LogManager::class, $this->logManagerReturning($logger));
+
+        Configuration::warnIfForcedOutsideDevelopment();
+    }
+
+    #[Test]
+    public function warnIfForcedOutsideDevelopmentDoesNothingWhenNotForced(): void
+    {
+        $this->reinitialiseContext('Production');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects(self::never())->method('warning');
+        GeneralUtility::setSingletonInstance(LogManager::class, $this->logManagerReturning($logger));
+
+        Configuration::warnIfForcedOutsideDevelopment();
+    }
+
+    #[Test]
+    public function warnIfForcedOutsideDevelopmentLogsWarningWhenForcedInProduction(): void
+    {
+        $this->reinitialiseContext('Production');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
+
+        $logger = $this->createMock(Logger::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('TYPO3_REQUEST_PROFILER_FORCE'));
+        GeneralUtility::setSingletonInstance(LogManager::class, $this->logManagerReturning($logger));
+
+        Configuration::warnIfForcedOutsideDevelopment();
     }
 
     #[Test]
@@ -150,6 +192,14 @@ final class ConfigurationTest extends TestCase
             '/tmp/cli',
             'UNIX',
         );
+    }
+
+    private function logManagerReturning(Logger $logger): LogManager
+    {
+        $logManager = $this->createMock(LogManager::class);
+        $logManager->method('getLogger')->willReturn($logger);
+
+        return $logManager;
     }
 
     /**

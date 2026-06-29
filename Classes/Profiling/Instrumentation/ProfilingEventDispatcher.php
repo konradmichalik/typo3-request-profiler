@@ -51,7 +51,7 @@ final readonly class ProfilingEventDispatcher implements EventDispatcherInterfac
         } finally {
             try {
                 $this->collector->record($event::class, (microtime(true) - $start) * 1000);
-            } catch (Throwable) {
+            } catch (Throwable) { // @codeCoverageIgnore
                 // Fail-safe: profiling must never affect event dispatching.
             }
         }

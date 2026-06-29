@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
 
+use ArrayIterator;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, LogCollector, QueryCollector};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowQueriesSection, TimingSection};
@@ -170,6 +171,16 @@ final class ProfileWriterTest extends FunctionalTestCase
 
         $files = glob(Environment::getVarPath().'/log/profiles/*.json') ?: [];
         self::assertLessThanOrEqual(3, count($files));
+    }
+
+    #[Test]
+    public function writeAcceptsTraversableSections(): void
+    {
+        $writer = new ProfileWriter(new ArrayIterator([new TimingSection()]));
+
+        $writer->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_iter', 1.0);
+
+        self::assertArrayHasKey('timing', $this->readProfile('tok_iter'));
     }
 
     /**

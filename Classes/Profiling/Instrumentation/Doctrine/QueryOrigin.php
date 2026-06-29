@@ -60,7 +60,7 @@ final class QueryOrigin
             return null !== $callSite ? $callable.' ('.$callSite.')' : $callable;
         }
 
-        return null;
+        return null; // @codeCoverageIgnore
     }
 
     /**

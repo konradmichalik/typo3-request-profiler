@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * ProfileReaderTest.
@@ -119,6 +120,22 @@ final class ProfileReaderTest extends TestCase
         $result = $this->subject->all();
 
         self::assertSame(['ok'], array_column($result, 'token'));
+    }
+
+    #[Test]
+    public function byTokenReturnsNullWhenJsonIsNotAnObject(): void
+    {
+        file_put_contents($this->directory.'/scalar.json', '123');
+
+        self::assertNull($this->subject->byToken('scalar'));
+    }
+
+    #[Test]
+    public function decodeReturnsNullWhenFileCannotBeRead(): void
+    {
+        $decode = new ReflectionMethod($this->subject, 'decode');
+
+        self::assertNull($decode->invoke($this->subject, $this->directory.'/missing.json'));
     }
 
     private function writeProfile(string $token, int $mtime): void
