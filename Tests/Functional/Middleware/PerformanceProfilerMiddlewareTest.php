@@ -15,11 +15,12 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Middleware;
 
 use KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\TimingSection;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ProfileContext, ProfileSection, TimingSection};
 use KonradMichalik\Typo3RequestProfiler\Tests\Functional\DevelopmentContextTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\RequestHandlerInterface;
+use RuntimeException;
 use TYPO3\CMS\Core\Core\{Environment, RequestId};
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -86,6 +87,46 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
         });
 
         self::assertFileDoesNotExist(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
+    public function failsSafeAndReturnsResponseWhenProfileWritingThrows(): void
+    {
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([$this->throwingSection()]));
+
+        $this->inDevelopmentContext(function () use ($middleware): void {
+            $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
+
+            self::assertSame(200, $response->getStatusCode());
+        });
+
+        self::assertFileDoesNotExist(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    private function throwingSection(): ProfileSection
+    {
+        return new class implements ProfileSection {
+            public function name(): string
+            {
+                return 'boom';
+            }
+
+            public function priority(): int
+            {
+                return 0;
+            }
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+
+            public function collect(ProfileContext $context): ?array
+            {
+                throw new RuntimeException('boom');
+            }
+        };
     }
 
     private function handler(): RequestHandlerInterface

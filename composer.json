@@ -80,6 +80,7 @@
 		],
 		"test:coverage": [
 			"@putenv XDEBUG_MODE=coverage",
+			"rm -rf .Build/coverage/cov",
 			"phpunit -c phpunit.xml --coverage-php=.Build/coverage/cov/unit.cov",
 			"phpunit -c FunctionalTests.xml --coverage-php=.Build/coverage/cov/functional.cov",
 			"phpcov merge --clover=.Build/coverage/clover.xml --html=.Build/coverage/html --text=php://stdout .Build/coverage/cov"

@@ -35,7 +35,7 @@ final class ProfilingLogWriter extends AbstractWriter
                 $record->getLevel(),
                 $record->getComponent(),
             );
-        } catch (Throwable) {
+        } catch (Throwable) { // @codeCoverageIgnore
             // Fail-safe: profiling must never break logging.
         }
 

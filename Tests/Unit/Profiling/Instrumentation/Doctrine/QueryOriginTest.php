@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentati
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\QueryOrigin;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * QueryOriginTest.
@@ -72,5 +73,13 @@ final class QueryOriginTest extends TestCase
         self::assertNotNull($origin);
         self::assertStringContainsString('QueryOriginTest', $origin);
         self::assertStringContainsString('captureReturnsCallingMethodWhenEnabled', $origin);
+    }
+
+    #[Test]
+    public function locationReturnsNullWhenFrameHasNoFileOrLine(): void
+    {
+        $location = new ReflectionMethod(QueryOrigin::class, 'location');
+
+        self::assertNull($location->invoke(null, ['line' => 5]));
     }
 }
