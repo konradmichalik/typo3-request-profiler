@@ -28,6 +28,20 @@ final class QueryAggregator
     private const MAX_DUPLICATES = 20;
     private const MAX_SLOW_QUERIES = 5;
 
+    private ?QueryCollector $memoCollector = null;
+
+    private int $memoRawCount = -1;
+
+    /**
+     * @var list<array{sql: string, ms: float, origin?: string|null}>
+     */
+    private array $memoQueries = [];
+
+    /**
+     * @var array{count: int, total_ms: float, duplicates: list<array{sql: string, count: int, total_ms: float, origin?: string}>}|null
+     */
+    private ?array $memoStats = null;
+
     /**
      * The application queries of a request: the collected queries minus dev-only
      * schema/connection introspection, so the real query picture (and any N+1)
@@ -37,10 +51,24 @@ final class QueryAggregator
      */
     public function applicationQueries(QueryCollector $collector): array
     {
-        return array_values(array_filter(
-            $collector->getQueries(),
-            fn (array $query): bool => !$this->isInfrastructureQuery($query['sql']),
-        ));
+        $this->refreshMemo($collector);
+
+        return $this->memoQueries;
+    }
+
+    /**
+     * Memoized {@see aggregate} over the collector's application queries. The
+     * query sections run back-to-back at write time against the same collector;
+     * without memoization each section would redo the full per-query
+     * normalisation regex work.
+     *
+     * @return array{count: int, total_ms: float, duplicates: list<array{sql: string, count: int, total_ms: float, origin?: string}>}
+     */
+    public function statsFor(QueryCollector $collector): array
+    {
+        $this->refreshMemo($collector);
+
+        return $this->memoStats ??= $this->aggregate($this->memoQueries);
     }
 
     /**
@@ -146,5 +174,25 @@ final class QueryAggregator
             },
             array_slice($queries, 0, self::MAX_SLOW_QUERIES),
         );
+    }
+
+    /**
+     * (Re)compute the memoized query list when the collector instance changes or
+     * has collected further queries since the last call.
+     */
+    private function refreshMemo(QueryCollector $collector): void
+    {
+        $rawCount = count($collector->getQueries());
+        if ($collector === $this->memoCollector && $rawCount === $this->memoRawCount) {
+            return;
+        }
+
+        $this->memoCollector = $collector;
+        $this->memoRawCount = $rawCount;
+        $this->memoStats = null;
+        $this->memoQueries = array_values(array_filter(
+            $collector->getQueries(),
+            fn (array $query): bool => !$this->isInfrastructureQuery($query['sql']),
+        ));
     }
 }
