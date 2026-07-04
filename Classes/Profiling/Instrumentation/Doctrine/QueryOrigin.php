@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine;
 
+use KonradMichalik\Typo3RequestProfiler\Configuration;
+
 /**
  * QueryOrigin.
  *
@@ -34,9 +36,7 @@ final class QueryOrigin
 
     public static function isEnabled(): bool
     {
-        $flag = getenv('TYPO3_REQUEST_PROFILER_TRACE');
-
-        return false !== $flag && '' !== $flag && '0' !== $flag;
+        return Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_TRACE');
     }
 
     public static function capture(): ?string
