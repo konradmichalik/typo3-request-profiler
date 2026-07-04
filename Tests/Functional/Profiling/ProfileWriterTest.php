@@ -174,6 +174,19 @@ final class ProfileWriterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writeLeavesNoTemporaryFileBehind(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        $this->subject->write($request, new Response(), 'tok_atomic', 1.0);
+
+        $directory = Environment::getVarPath().'/log/profiles';
+        self::assertFileExists($directory.'/tok_atomic.json');
+        self::assertSame([], glob($directory.'/*.tmp') ?: []);
+    }
+
+    #[Test]
     public function writeAcceptsTraversableSections(): void
     {
         $writer = new ProfileWriter(new ArrayIterator([new TimingSection()]));
