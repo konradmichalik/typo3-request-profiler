@@ -111,6 +111,20 @@ final class ProfileWriterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writeMasksQueryStringValuesInProfileUrl(): void
+    {
+        $request = (new ServerRequest('https://example.com/search?q=john%40example.com&page=2', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        $this->subject->write($request, new Response(), 'tok_masked', 1.0);
+
+        self::assertSame(
+            'https://example.com/search?q=?&page=?',
+            $this->readProfile('tok_masked')['url'],
+        );
+    }
+
+    #[Test]
     public function writeKeepsSectionsInPriorityOrder(): void
     {
         $pageInformation = new PageInformation();

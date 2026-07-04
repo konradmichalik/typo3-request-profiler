@@ -72,7 +72,7 @@ final readonly class ProfileWriter
             'token' => $token,
             'time' => date('c'),
             'method' => $request->getMethod(),
-            'url' => (string) $request->getUri(),
+            'url' => UrlSanitizer::maskQueryValues($request->getUri()),
             'status' => $response->getStatusCode(),
         ];
 

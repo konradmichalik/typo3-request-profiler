@@ -135,7 +135,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `token` | string | Request identifier; also the file name. |
 | `time` | string | Request time as ISO 8601 (`date('c')`). |
 | `method` | string | HTTP request method. |
-| `url` | string | Full request URI. |
+| `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. |
 
 **Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
