@@ -73,7 +73,7 @@ The profiler is controlled entirely via environment variables:
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
 
 > [!TIP]
-> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted.
+> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. Event timing follows the same activation gate as the rest of the profiler, so it also works on staging together with `TYPO3_REQUEST_PROFILER_FORCE=1`.
 
 ## 💡 Profile Format
 
