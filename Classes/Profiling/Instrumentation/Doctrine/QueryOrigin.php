@@ -32,11 +32,24 @@ final class QueryOrigin
         'TYPO3\\CMS\\Core\\Database\\',
     ];
 
+    /**
+     * Memoized flag: {@see capture} runs per query, but the environment does not
+     * change within a request, so the getenv() lookup is resolved only once.
+     */
+    private static ?bool $enabled = null;
+
     public static function isEnabled(): bool
     {
-        $flag = getenv('TYPO3_REQUEST_PROFILER_TRACE');
+        return self::$enabled ??= self::readEnabledFlag();
+    }
 
-        return false !== $flag && '' !== $flag && '0' !== $flag;
+    /**
+     * Reset the memoized flag. Intended for tests that toggle the environment
+     * variable between cases.
+     */
+    public static function reset(): void
+    {
+        self::$enabled = null;
     }
 
     public static function capture(): ?string
@@ -84,5 +97,12 @@ final class QueryOrigin
         }
 
         return false;
+    }
+
+    private static function readEnabledFlag(): bool
+    {
+        $flag = getenv('TYPO3_REQUEST_PROFILER_TRACE');
+
+        return false !== $flag && '' !== $flag && '0' !== $flag;
     }
 }
