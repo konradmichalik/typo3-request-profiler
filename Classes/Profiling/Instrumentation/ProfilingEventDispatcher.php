@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation;
 
+use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\EventCollector;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Throwable;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -33,7 +33,10 @@ final readonly class ProfilingEventDispatcher implements EventDispatcherInterfac
     public function __construct(
         private EventDispatcherInterface $inner,
     ) {
-        $this->enabled = Environment::getContext()->isDevelopment() && self::isProfilingEnabled();
+        // Follow the same activation gate as the rest of the profiler
+        // (Development, or Force outside it) so events are captured wherever
+        // profiling is active — including staging with _FORCE=1.
+        $this->enabled = Configuration::isProfilingActive() && self::isProfilingEnabled();
         // Shared via makeInstance (like QueryCollector) so the writer reads the
         // very same request-scoped instance this dispatcher records into.
         $this->collector = GeneralUtility::makeInstance(EventCollector::class);
