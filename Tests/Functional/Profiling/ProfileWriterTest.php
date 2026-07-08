@@ -188,6 +188,45 @@ final class ProfileWriterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writeLeavesNoTemporaryFileBehind(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        $this->subject->write($request, new Response(), 'tok_atomic', 1.0);
+
+        $directory = Environment::getVarPath().'/log/profiles';
+        self::assertFileExists($directory.'/tok_atomic.json');
+        self::assertSame([], glob($directory.'/*.tmp') ?: []);
+    }
+
+    #[Test]
+    public function writeCleansUpTemporaryFileWhenRenameFails(): void
+    {
+        $directory = Environment::getVarPath().'/log/profiles';
+        GeneralUtility::mkdir_deep($directory);
+        // A directory occupying the target path makes the atomic rename fail.
+        GeneralUtility::mkdir_deep($directory.'/tok_rename.json');
+
+        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_rename', 1.0);
+
+        self::assertFileDoesNotExist($directory.'/tok_rename.json.tmp');
+    }
+
+    #[Test]
+    public function writeSkipsWhenTemporaryFileCannotBeWritten(): void
+    {
+        $directory = Environment::getVarPath().'/log/profiles';
+        GeneralUtility::mkdir_deep($directory);
+        // A directory at the temp path makes the temp write fail.
+        GeneralUtility::mkdir_deep($directory.'/tok_temp.json.tmp');
+
+        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_temp', 1.0);
+
+        self::assertFileDoesNotExist($directory.'/tok_temp.json');
+    }
+
+    #[Test]
     public function writeAcceptsTraversableSections(): void
     {
         $writer = new ProfileWriter(new ArrayIterator([new TimingSection()]));
