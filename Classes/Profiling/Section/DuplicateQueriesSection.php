@@ -47,8 +47,6 @@ final readonly class DuplicateQueriesSection implements ProfileSection
      */
     public function collect(ProfileContext $context): array
     {
-        $queries = $this->aggregator->applicationQueries(GeneralUtility::makeInstance(QueryCollector::class));
-
-        return $this->aggregator->aggregate($queries)['duplicates'];
+        return $this->aggregator->statsFor(GeneralUtility::makeInstance(QueryCollector::class))['duplicates'];
     }
 }

@@ -47,8 +47,7 @@ final readonly class QueriesSection implements ProfileSection
      */
     public function collect(ProfileContext $context): array
     {
-        $queries = $this->aggregator->applicationQueries(GeneralUtility::makeInstance(QueryCollector::class));
-        $stats = $this->aggregator->aggregate($queries);
+        $stats = $this->aggregator->statsFor(GeneralUtility::makeInstance(QueryCollector::class));
 
         return ['count' => $stats['count'], 'total_ms' => $stats['total_ms']];
     }

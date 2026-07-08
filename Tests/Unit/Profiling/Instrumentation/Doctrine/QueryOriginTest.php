@@ -25,9 +25,15 @@ use ReflectionMethod;
  */
 final class QueryOriginTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        QueryOrigin::reset();
+    }
+
     protected function tearDown(): void
     {
         putenv('TYPO3_REQUEST_PROFILER_TRACE');
+        QueryOrigin::reset();
     }
 
     #[Test]
@@ -41,6 +47,20 @@ final class QueryOriginTest extends TestCase
         }
 
         self::assertSame($expected, QueryOrigin::isEnabled());
+    }
+
+    #[Test]
+    public function isEnabledMemoizesTheFlagUntilReset(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_TRACE=1');
+        self::assertTrue(QueryOrigin::isEnabled());
+
+        // A later environment change is not observed until the memo is reset.
+        putenv('TYPO3_REQUEST_PROFILER_TRACE=0');
+        self::assertTrue(QueryOrigin::isEnabled());
+
+        QueryOrigin::reset();
+        self::assertFalse(QueryOrigin::isEnabled());
     }
 
     /**

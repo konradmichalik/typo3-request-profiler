@@ -72,7 +72,7 @@ final readonly class ProfileWriter
             'token' => $token,
             'time' => date('c'),
             'method' => $request->getMethod(),
-            'url' => (string) $request->getUri(),
+            'url' => UrlSanitizer::maskQueryValues($request->getUri()),
             'status' => $response->getStatusCode(),
         ];
 
@@ -88,10 +88,31 @@ final readonly class ProfileWriter
 
         $json = json_encode($profile, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         if (false !== $json) {
-            file_put_contents($directory.'/'.$token.'.json', $json);
+            $this->writeAtomically($directory.'/'.$token.'.json', $json);
         }
 
         $this->prune($directory);
+    }
+
+    /**
+     * Write to a sibling temp file and atomically rename it into place, so a
+     * concurrent {@see ProfileReader} never observes a half-written profile.
+     * fixPermissions() applies TYPO3's configured fileCreateMask; the rename
+     * carries those permissions over to the final file.
+     */
+    private function writeAtomically(string $target, string $json): void
+    {
+        // The token is a unique request id, so the temp name never collides
+        // with a concurrent request writing its own profile.
+        $temp = $target.'.tmp';
+        if (false === @file_put_contents($temp, $json)) {
+            return;
+        }
+
+        GeneralUtility::fixPermissions($temp);
+        if (!@rename($temp, $target)) {
+            @unlink($temp);
+        }
     }
 
     /**

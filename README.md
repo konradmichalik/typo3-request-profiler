@@ -6,6 +6,7 @@
 
 [![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-request-profiler?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-request-profiler?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
+![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.0-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-request-profiler?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
@@ -73,7 +74,7 @@ The profiler is controlled entirely via environment variables:
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
 
 > [!TIP]
-> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted.
+> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. Event timing follows the same activation gate as the rest of the profiler, so it also works on staging together with `TYPO3_REQUEST_PROFILER_FORCE=1`.
 
 ## 💡 Profile Format
 
@@ -135,7 +136,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `token` | string | Request identifier; also the file name. |
 | `time` | string | Request time as ISO 8601 (`date('c')`). |
 | `method` | string | HTTP request method. |
-| `url` | string | Full request URI. |
+| `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. |
 
 **Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
