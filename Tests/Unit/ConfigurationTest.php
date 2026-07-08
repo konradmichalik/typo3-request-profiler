@@ -16,7 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit;
 use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
-use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
@@ -48,7 +48,33 @@ final class ConfigurationTest extends TestCase
     {
         $GLOBALS['TYPO3_CONF_VARS'] = $this->backup;
         putenv('TYPO3_REQUEST_PROFILER_FORCE');
+        putenv('TYPO3_REQUEST_PROFILER_TEST_FLAG');
         GeneralUtility::purgeInstances();
+    }
+
+    #[Test]
+    #[DataProvider('envFlagProvider')]
+    public function isEnvFlagEnabledTreatsAnyNonEmptyNonZeroValueAsEnabled(string|false $value, bool $expected): void
+    {
+        if (false === $value) {
+            putenv('TYPO3_REQUEST_PROFILER_TEST_FLAG');
+        } else {
+            putenv('TYPO3_REQUEST_PROFILER_TEST_FLAG='.$value);
+        }
+
+        self::assertSame($expected, Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_TEST_FLAG'));
+    }
+
+    /**
+     * @return iterable<string, array{string|false, bool}>
+     */
+    public static function envFlagProvider(): iterable
+    {
+        yield 'unset' => [false, false];
+        yield 'zero' => ['0', false];
+        yield 'empty' => ['', false];
+        yield 'one' => ['1', true];
+        yield 'truthy' => ['yes', true];
     }
 
     #[Test]

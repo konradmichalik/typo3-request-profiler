@@ -36,7 +36,7 @@ final readonly class ProfilingEventDispatcher implements EventDispatcherInterfac
         // Follow the same activation gate as the rest of the profiler
         // (Development, or Force outside it) so events are captured wherever
         // profiling is active — including staging with _FORCE=1.
-        $this->enabled = Configuration::isProfilingActive() && self::isProfilingEnabled();
+        $this->enabled = Configuration::isProfilingActive() && Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_EVENTS');
         // Shared via makeInstance (like QueryCollector) so the writer reads the
         // very same request-scoped instance this dispatcher records into.
         $this->collector = GeneralUtility::makeInstance(EventCollector::class);
@@ -58,12 +58,5 @@ final readonly class ProfilingEventDispatcher implements EventDispatcherInterfac
                 // Fail-safe: profiling must never affect event dispatching.
             }
         }
-    }
-
-    private static function isProfilingEnabled(): bool
-    {
-        $flag = getenv('TYPO3_REQUEST_PROFILER_EVENTS');
-
-        return false !== $flag && '' !== $flag && '0' !== $flag;
     }
 }
