@@ -20,6 +20,8 @@ services:
       - '../Classes/Profiling/Section/ProfileContext.php'
       # Value-constructed read API (required $directory is not autowirable).
       - '../Classes/Profiling/ProfileReader.php'
+      # Static utility, not a service.
+      - '../Classes/Profiling/UrlSanitizer.php'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
       - '../Classes/Profiling/Collector/*'
 
