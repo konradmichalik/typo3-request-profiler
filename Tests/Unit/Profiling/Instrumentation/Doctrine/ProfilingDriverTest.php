@@ -15,11 +15,11 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentati
 
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\Connection;
+use KonradMichalik\Ttt\Attribute\WithSingleton;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\{ProfilingConnection, ProfilingDriver, ProfilingDriverMiddleware};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * ProfilingDriverTest.
@@ -40,14 +40,11 @@ final class ProfilingDriverTest extends TestCase
     }
 
     #[Test]
+    #[WithSingleton(QueryCollector::class, QueryCollector::class)]
     public function middlewareWrapsTheDriverInAProfilingDriver(): void
     {
-        GeneralUtility::setSingletonInstance(QueryCollector::class, new QueryCollector());
-
         $wrapped = (new ProfilingDriverMiddleware())->wrap($this->createMock(Driver::class));
 
         self::assertInstanceOf(ProfilingDriver::class, $wrapped);
-
-        GeneralUtility::purgeInstances();
     }
 }

@@ -13,11 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
+use KonradMichalik\Ttt\Attribute\WithSingleton;
+use KonradMichalik\Ttt\Http\Requests;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\EventCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{EventsSection, ProfileContext};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -25,6 +27,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithSingleton(EventCollector::class, EventCollector::class)]
 final class EventsSectionTest extends TestCase
 {
     private EventsSection $subject;
@@ -34,13 +37,11 @@ final class EventsSectionTest extends TestCase
     protected function setUp(): void
     {
         $this->subject = new EventsSection();
-        $this->collector = new EventCollector();
-        GeneralUtility::setSingletonInstance(EventCollector::class, $this->collector);
+        $this->collector = GeneralUtility::makeInstance(EventCollector::class);
     }
 
     protected function tearDown(): void
     {
-        GeneralUtility::purgeInstances();
         putenv('TYPO3_REQUEST_PROFILER_EVENTS');
     }
 
@@ -119,6 +120,6 @@ final class EventsSectionTest extends TestCase
 
     private function context(): ProfileContext
     {
-        return new ProfileContext(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok', 1.0);
+        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);
     }
 }

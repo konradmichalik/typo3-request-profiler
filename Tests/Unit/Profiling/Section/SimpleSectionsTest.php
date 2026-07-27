@@ -13,10 +13,11 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
+use KonradMichalik\Ttt\Http\Requests;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{MemorySection, PhpSection, ProfileContext, TimingSection};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use TYPO3\CMS\Core\Http\Response;
 
 /**
  * SimpleSectionsTest.
@@ -58,6 +59,6 @@ final class SimpleSectionsTest extends TestCase
 
     private function context(float $totalMs = 1.0): ProfileContext
     {
-        return new ProfileContext(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok', $totalMs);
+        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', $totalMs);
     }
 }

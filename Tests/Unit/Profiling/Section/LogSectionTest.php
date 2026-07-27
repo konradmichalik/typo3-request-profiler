@@ -13,11 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
+use KonradMichalik\Ttt\Attribute\WithSingleton;
+use KonradMichalik\Ttt\Http\Requests;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\LogCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{LogSection, ProfileContext};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -25,6 +27,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithSingleton(LogCollector::class, LogCollector::class)]
 final class LogSectionTest extends TestCase
 {
     private LogSection $subject;
@@ -34,13 +37,7 @@ final class LogSectionTest extends TestCase
     protected function setUp(): void
     {
         $this->subject = new LogSection();
-        $this->collector = new LogCollector();
-        GeneralUtility::setSingletonInstance(LogCollector::class, $this->collector);
-    }
-
-    protected function tearDown(): void
-    {
-        GeneralUtility::purgeInstances();
+        $this->collector = GeneralUtility::makeInstance(LogCollector::class);
     }
 
     #[Test]
@@ -120,6 +117,6 @@ final class LogSectionTest extends TestCase
 
     private function context(): ProfileContext
     {
-        return new ProfileContext(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok', 1.0);
+        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);
     }
 }
