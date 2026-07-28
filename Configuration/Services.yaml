@@ -28,6 +28,12 @@ services:
   KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware:
     public: true
 
+  KonradMichalik\Typo3RequestProfiler\Command\ProfilerActivateCommand:
+    public: true
+
+  KonradMichalik\Typo3RequestProfiler\Command\ProfilerDeactivateCommand:
+    public: true
+
   KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter:
     arguments:
       $sections: !tagged_iterator typo3_request_profiler.profile_section
