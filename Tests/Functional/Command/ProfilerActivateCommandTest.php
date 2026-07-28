@@ -17,7 +17,10 @@ use KonradMichalik\Typo3RequestProfiler\Activation\ProfilerStateService;
 use KonradMichalik\Typo3RequestProfiler\Command\ProfilerActivateCommand;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+
+use function dirname;
 
 /**
  * ProfilerActivateCommandTest.
@@ -32,6 +35,9 @@ final class ProfilerActivateCommandTest extends FunctionalTestCase
 
     protected function tearDown(): void
     {
+        // The failure test below deliberately locks this directory down;
+        // restore it before deactivate()'s own unlink attempt.
+        @chmod(dirname(ProfilerStateService::filePath()), 0o700);
         $this->stateService->deactivate();
         parent::tearDown();
     }
@@ -69,6 +75,21 @@ final class ProfilerActivateCommandTest extends FunctionalTestCase
         self::assertSame(1, $exitCode);
         self::assertFalse($this->stateService->isActive());
         self::assertStringContainsString('Invalid duration', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function reportsFailureWhenTheStateFileCannotBeWritten(): void
+    {
+        $tester = $this->commandTester();
+        $directory = dirname(ProfilerStateService::filePath());
+        GeneralUtility::mkdir_deep($directory);
+        chmod($directory, 0o500);
+
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(1, $exitCode);
+        self::assertFalse($this->stateService->isActive());
+        self::assertStringContainsString('Failed to write', $tester->getDisplay());
     }
 
     private function commandTester(): CommandTester
