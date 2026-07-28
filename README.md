@@ -6,6 +6,7 @@
 
 [![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-request-profiler?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-request-profiler?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
+![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.0-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-request-profiler?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
@@ -63,17 +64,33 @@ The profiler is controlled entirely via environment variables:
 | `TYPO3_REQUEST_PROFILER_FORCE` | (off) | Set to `1` to enable profiling outside the Development context (e.g. staging). Must be set deliberately, never in real production. |
 | `TYPO3_REQUEST_PROFILER_MIN_MS` | `0` | Only persist requests whose total time exceeds this threshold (ms). |
 | `TYPO3_REQUEST_PROFILER_KEEP` | `50` | Number of most-recent profiles to retain; older files are pruned automatically. |
+| `TYPO3_REQUEST_PROFILER_MAX_AGE_S` | (off) | Also prune profiles older than this many seconds, on top of `..._KEEP`. Disabled by default. |
 | `TYPO3_REQUEST_PROFILER_TRACE` | (off) | Set to `1` to capture the calling `Class::method (file:line)` for each query (added as `origin` to `slow_queries`/`duplicate_queries`). |
 | `TYPO3_REQUEST_PROFILER_EVENTS` | (off) | Set to `1` to time dispatched PSR-14 events and add an `events` section (count + the most expensive event classes). |
 
 > [!NOTE]
-> `TYPO3_REQUEST_PROFILER_FORCE` is a deployment-level switch evaluated in `ext_localconf.php` and therefore **cached** — it is not a live toggle. Changing it requires a cache flush to take effect. This is in contrast to the per-request `TYPO3_REQUEST_PROFILER=0`, which short-circuits the middleware on each request and needs no cache flush.
+> `TYPO3_REQUEST_PROFILER=0` short-circuits everything on each request (kill switch) and needs no cache flush. `TYPO3_REQUEST_PROFILER_FORCE` and the `profiler:activate` toggle (below) are also evaluated live per request — query/log instrumentation is wired up unconditionally (a cheap in-memory append per request), so neither needs a cache flush to take effect.
+
+## 🧑‍💻 Temporary activation toggle
+
+Besides the `Development`/`FORCE` context switch, profiling can be turned on temporarily and per-instance — an xdebug-style toggle, useful for a quick investigation on an environment that otherwise stays off:
+
+```bash
+vendor/bin/typo3 profiler:activate                # 15 minutes (default)
+vendor/bin/typo3 profiler:activate --duration=1h  # custom duration: Ns, Nm, or Nh
+vendor/bin/typo3 profiler:deactivate               # turn it back off immediately
+```
+
+The toggle writes a small state file (with an expiry timestamp) under `var/log/`; an expired, missing, or unreadable state file always counts as inactive. Activation checks are cheapest-first: the `TYPO3_REQUEST_PROFILER=0` kill switch wins over everything, then the state-file toggle, then the `Development`/`FORCE` context. `--duration` accepts 1 second up to 7 days; anything outside that range is rejected up front.
+
+> [!NOTE]
+> The state-file mechanism follows `var/log`: if it's node-local, `profiler:activate` only affects the node it runs on. If `var/` is a shared directory across a multi-node setup, activation applies to every node reading that shared state file — plan the toggle's scope accordingly.
 
 > [!TIP]
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
 
 > [!TIP]
-> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted.
+> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. Event timing follows the same activation gate as the rest of the profiler, so it also works on staging together with `TYPO3_REQUEST_PROFILER_FORCE=1`.
 
 ## 💡 Profile Format
 
@@ -135,7 +152,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `token` | string | Request identifier; also the file name. |
 | `time` | string | Request time as ISO 8601 (`date('c')`). |
 | `method` | string | HTTP request method. |
-| `url` | string | Full request URI. |
+| `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. |
 
 **Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):

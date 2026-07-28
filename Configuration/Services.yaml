@@ -20,10 +20,18 @@ services:
       - '../Classes/Profiling/Section/ProfileContext.php'
       # Value-constructed read API (required $directory is not autowirable).
       - '../Classes/Profiling/ProfileReader.php'
+      # Static utility, not a service.
+      - '../Classes/Profiling/UrlSanitizer.php'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
       - '../Classes/Profiling/Collector/*'
 
   KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware:
+    public: true
+
+  KonradMichalik\Typo3RequestProfiler\Command\ProfilerActivateCommand:
+    public: true
+
+  KonradMichalik\Typo3RequestProfiler\Command\ProfilerDeactivateCommand:
     public: true
 
   KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter:

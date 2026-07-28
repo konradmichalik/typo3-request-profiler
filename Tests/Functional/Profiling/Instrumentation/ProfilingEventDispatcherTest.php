@@ -46,6 +46,7 @@ final class ProfilingEventDispatcherTest extends FunctionalTestCase
     {
         GeneralUtility::purgeInstances();
         putenv('TYPO3_REQUEST_PROFILER_EVENTS');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE');
         parent::tearDown();
     }
 
@@ -78,6 +79,36 @@ final class ProfilingEventDispatcherTest extends FunctionalTestCase
             $result = (new ProfilingEventDispatcher($inner))->dispatch($event);
 
             self::assertSame($event, $result);
+        });
+
+        self::assertSame([], $this->collector->getEvents());
+    }
+
+    #[Test]
+    public function recordsOutsideDevelopmentWhenForceEnabled(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_EVENTS=1');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
+        $event = new stdClass();
+        $inner = $this->innerReturning($event);
+
+        $this->inApplicationContext('Production', static function () use ($inner, $event): void {
+            (new ProfilingEventDispatcher($inner))->dispatch($event);
+        });
+
+        self::assertCount(1, $this->collector->getEvents());
+    }
+
+    #[Test]
+    public function passesThroughOutsideDevelopmentWithoutForce(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_EVENTS=1');
+        putenv('TYPO3_REQUEST_PROFILER_FORCE');
+        $event = new stdClass();
+        $inner = $this->innerReturning($event);
+
+        $this->inApplicationContext('Production', static function () use ($inner, $event): void {
+            (new ProfilingEventDispatcher($inner))->dispatch($event);
         });
 
         self::assertSame([], $this->collector->getEvents());

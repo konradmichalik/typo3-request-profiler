@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Section;
 
+use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\EventCollector;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -40,9 +41,7 @@ final class EventsSection implements ProfileSection
 
     public function isEnabled(): bool
     {
-        $flag = getenv('TYPO3_REQUEST_PROFILER_EVENTS');
-
-        return false !== $flag && '' !== $flag && '0' !== $flag;
+        return Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_EVENTS');
     }
 
     /**

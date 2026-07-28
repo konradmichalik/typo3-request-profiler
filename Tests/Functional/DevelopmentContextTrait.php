@@ -24,8 +24,13 @@ trait DevelopmentContextTrait
 {
     private function inDevelopmentContext(callable $callback): void
     {
+        $this->inApplicationContext('Development', $callback);
+    }
+
+    private function inApplicationContext(string $contextName, callable $callback): void
+    {
         $previous = Environment::getContext();
-        $this->reinitialiseContext(new ApplicationContext('Development'));
+        $this->reinitialiseContext(new ApplicationContext($contextName));
 
         try {
             $callback();

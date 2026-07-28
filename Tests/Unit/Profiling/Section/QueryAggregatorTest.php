@@ -207,4 +207,48 @@ final class QueryAggregatorTest extends TestCase
 
         self::assertSame('App\\Repo::find (Repo.php:88)', $result[0]['origin'] ?? null);
     }
+
+    #[Test]
+    public function statsForAggregatesTheApplicationQueriesOfTheCollector(): void
+    {
+        $collector = new QueryCollector();
+        $collector->addQuery('SELECT title FROM pages WHERE uid = 1', 0.5);
+        $collector->addQuery('SELECT title FROM pages WHERE uid = 2', 0.5);
+        $collector->addQuery('SELECT DATABASE()', 0.1);
+
+        $stats = $this->subject->statsFor($collector);
+
+        self::assertSame(2, $stats['count']);
+        self::assertCount(1, $stats['duplicates']);
+        self::assertSame('SELECT title FROM pages WHERE uid = ?', $stats['duplicates'][0]['sql']);
+    }
+
+    #[Test]
+    public function statsForIsRecomputedWhenTheCollectorReceivesNewQueries(): void
+    {
+        $collector = new QueryCollector();
+        $collector->addQuery('SELECT a FROM x WHERE id = 1', 1.0);
+
+        self::assertSame(1, $this->subject->statsFor($collector)['count']);
+
+        $collector->addQuery('SELECT a FROM x WHERE id = 2', 1.0);
+
+        $stats = $this->subject->statsFor($collector);
+        self::assertSame(2, $stats['count']);
+        self::assertCount(1, $stats['duplicates']);
+    }
+
+    #[Test]
+    public function statsForDistinguishesCollectorInstances(): void
+    {
+        $first = new QueryCollector();
+        $first->addQuery('SELECT a FROM x WHERE id = 1', 1.0);
+        $second = new QueryCollector();
+        $second->addQuery('SELECT b FROM y WHERE id = 1', 1.0);
+        $second->addQuery('SELECT b FROM y WHERE id = 2', 1.0);
+
+        self::assertSame(1, $this->subject->statsFor($first)['count']);
+        self::assertSame(2, $this->subject->statsFor($second)['count']);
+        self::assertSame(1, $this->subject->statsFor($first)['count']);
+    }
 }

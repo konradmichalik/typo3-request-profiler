@@ -48,6 +48,17 @@ class Configuration
     }
 
     /**
+     * Whether an on/off profiler environment flag is enabled. A flag counts as
+     * enabled when it is set to any value other than an empty string or "0".
+     */
+    public static function isEnvFlagEnabled(string $name): bool
+    {
+        $flag = getenv($name);
+
+        return false !== $flag && '' !== $flag && '0' !== $flag;
+    }
+
+    /**
      * Emit a warning when profiling is force-enabled outside the Development
      * context. Called from ext_localconf.php, which is cached, so this fires
      * only on cache (re)build instead of on every request.

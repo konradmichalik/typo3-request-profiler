@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentati
 
 use Doctrine\DBAL\Driver\{Connection, Result, Statement};
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\QueryCollector;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\{ProfilingConnection, ProfilingStatement};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\{ProfilingConnection, ProfilingStatement, QueryOrigin};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -33,6 +33,7 @@ final class ProfilingConnectionTest extends TestCase
 
     protected function setUp(): void
     {
+        QueryOrigin::reset();
         $this->collector = new QueryCollector();
         $this->wrapped = $this->createMock(Connection::class);
         $this->subject = new ProfilingConnection($this->wrapped, $this->collector);
@@ -41,6 +42,7 @@ final class ProfilingConnectionTest extends TestCase
     protected function tearDown(): void
     {
         putenv('TYPO3_REQUEST_PROFILER_TRACE');
+        QueryOrigin::reset();
     }
 
     #[Test]
