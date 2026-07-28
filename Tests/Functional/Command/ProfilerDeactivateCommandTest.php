@@ -19,6 +19,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
+use function dirname;
+
 /**
  * ProfilerDeactivateCommandTest.
  *
@@ -27,6 +29,16 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class ProfilerDeactivateCommandTest extends FunctionalTestCase
 {
     protected bool $initializeDatabase = false;
+
+    protected function tearDown(): void
+    {
+        $directory = dirname(ProfilerStateService::filePath());
+        // The failure test below deliberately locks this directory down;
+        // restore it before the parent's own cleanup tries to remove it.
+        @chmod($directory, 0o700);
+        (new ProfilerStateService())->deactivate();
+        parent::tearDown();
+    }
 
     #[Test]
     public function deactivatesAnActiveToggle(): void
@@ -41,5 +53,20 @@ final class ProfilerDeactivateCommandTest extends FunctionalTestCase
         self::assertSame(0, $exitCode);
         self::assertFalse($stateService->isActive());
         self::assertStringContainsString('Profiling deactivated', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function reportsFailureWhenTheStateFileCannotBeRemoved(): void
+    {
+        $stateService = new ProfilerStateService();
+        $stateService->activate(Duration::default());
+        $directory = dirname(ProfilerStateService::filePath());
+        chmod($directory, 0o500);
+
+        $tester = new CommandTester(new ProfilerDeactivateCommand($stateService));
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Failed to remove', $tester->getDisplay());
     }
 }
