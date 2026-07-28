@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
 
 use ArrayIterator;
+use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, LogCollector, QueryCollector};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
@@ -37,6 +38,8 @@ use function count;
  */
 final class ProfileWriterTest extends FunctionalTestCase
 {
+    use JsonAssertions;
+
     protected bool $initializeDatabase = false;
 
     private ProfileWriter $subject;
@@ -95,21 +98,21 @@ final class ProfileWriterTest extends FunctionalTestCase
         $this->subject->write($request, new Response(), 'tok_main', 12.5, ActivationMode::Context);
 
         $profile = $this->readProfile('tok_main');
-        self::assertSame(ProfileWriter::SCHEMA_VERSION, $profile['schemaVersion']);
-        self::assertSame('tok_main', $profile['token']);
-        self::assertSame(42, $profile['page']['id']);
-        self::assertSame(12.5, $profile['timing']['total_ms']);
+        self::assertJsonPath($profile, 'schemaVersion', ProfileWriter::SCHEMA_VERSION);
+        self::assertJsonPath($profile, 'token', 'tok_main');
+        self::assertJsonPath($profile, 'page.id', 42);
+        self::assertJsonPath($profile, 'timing.total_ms', 12.5);
         // The SELECT DATABASE() infrastructure query is filtered out.
-        self::assertSame(2, $profile['queries']['count']);
-        self::assertTrue($profile['cache']['cacheable']);
+        self::assertJsonPath($profile, 'queries.count', 2);
+        self::assertJsonPath($profile, 'cache.cacheable', true);
         self::assertCount(1, $profile['duplicate_queries']);
-        self::assertSame(2, $profile['duplicate_queries'][0]['count']);
-        self::assertSame('SELECT title FROM pages WHERE uid = ?', $profile['duplicate_queries'][0]['sql']);
-        self::assertArrayHasKey('peak_mb', $profile['memory']);
+        self::assertJsonPath($profile, 'duplicate_queries.0.count', 2);
+        self::assertJsonPath($profile, 'duplicate_queries.0.sql', 'SELECT title FROM pages WHERE uid = ?');
+        self::assertJsonHasPath($profile, 'memory.peak_mb');
         self::assertGreaterThan(0, $profile['php']['included_files']);
-        self::assertSame(2, $profile['log']['count']);
-        self::assertSame(['warning' => 2], $profile['log']['by_level']);
-        self::assertSame('App.Service.Foo', $profile['log']['top_components'][0]['component']);
+        self::assertJsonPath($profile, 'log.count', 2);
+        self::assertJsonPath($profile, 'log.by_level', ['warning' => 2]);
+        self::assertJsonPath($profile, 'log.top_components.0.component', 'App.Service.Foo');
     }
 
     #[Test]
@@ -172,8 +175,8 @@ final class ProfileWriterTest extends FunctionalTestCase
         $this->subject->write($request, new Response(), 'tok_uncached', 5.0, ActivationMode::Context);
 
         $profile = $this->readProfile('tok_uncached');
-        self::assertFalse($profile['cache']['cacheable']);
-        self::assertFalse($profile['cache']['hit']);
+        self::assertJsonPath($profile, 'cache.cacheable', false);
+        self::assertJsonPath($profile, 'cache.hit', false);
         self::assertContains('no_cache parameter was given', $profile['cache']['disabled_reasons']);
     }
 

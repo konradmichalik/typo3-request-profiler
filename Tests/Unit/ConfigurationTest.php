@@ -13,13 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit;
 
+use KonradMichalik\Ttt\Attribute\{InApplicationContext, WithEnvironment};
 use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
-use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
 use TYPO3\CMS\Core\Log\{LogManager, Logger};
 use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
 
@@ -30,6 +30,7 @@ use function is_array;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithEnvironment]
 final class ConfigurationTest extends TestCase
 {
     /**
@@ -78,43 +79,41 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    #[InApplicationContext('Development')]
     public function isProfilingActiveIsTrueInDevelopmentContext(): void
     {
-        $this->reinitialiseContext('Development');
-
         self::assertTrue(Configuration::isProfilingActive());
     }
 
     #[Test]
+    #[InApplicationContext('Production')]
     public function isProfilingActiveIsFalseOutsideDevelopmentWithoutForce(): void
     {
-        $this->reinitialiseContext('Production');
-
         self::assertFalse(Configuration::isProfilingActive());
     }
 
     #[Test]
+    #[InApplicationContext('Production')]
     public function isProfilingActiveIsTrueOutsideDevelopmentWhenForced(): void
     {
-        $this->reinitialiseContext('Production');
         putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
 
         self::assertTrue(Configuration::isProfilingActive());
     }
 
     #[Test]
+    #[InApplicationContext('Production')]
     public function isProfilingActiveIsFalseOutsideDevelopmentWhenForceIsNotExactlyOne(): void
     {
-        $this->reinitialiseContext('Production');
         putenv('TYPO3_REQUEST_PROFILER_FORCE=true');
 
         self::assertFalse(Configuration::isProfilingActive());
     }
 
     #[Test]
+    #[InApplicationContext('Development')]
     public function warnIfForcedOutsideDevelopmentDoesNothingInDevelopmentContext(): void
     {
-        $this->reinitialiseContext('Development');
         putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
 
         $logger = $this->createMock(Logger::class);
@@ -125,10 +124,9 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    #[InApplicationContext('Production')]
     public function warnIfForcedOutsideDevelopmentDoesNothingWhenNotForced(): void
     {
-        $this->reinitialiseContext('Production');
-
         $logger = $this->createMock(Logger::class);
         $logger->expects(self::never())->method('warning');
         GeneralUtility::setSingletonInstance(LogManager::class, $this->logManagerReturning($logger));
@@ -137,9 +135,9 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    #[InApplicationContext('Production')]
     public function warnIfForcedOutsideDevelopmentLogsWarningWhenForcedInProduction(): void
     {
-        $this->reinitialiseContext('Production');
         putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
 
         $logger = $this->createMock(Logger::class);
@@ -199,25 +197,6 @@ final class ConfigurationTest extends TestCase
         Configuration::registerProfilingLogWriter();
 
         self::assertSame('not-an-array', $GLOBALS['TYPO3_CONF_VARS']);
-    }
-
-    /**
-     * The unit bootstrap does not initialise the Environment, so set up the
-     * requested application context with throwaway paths.
-     */
-    private function reinitialiseContext(string $context): void
-    {
-        Environment::initialize(
-            new ApplicationContext($context),
-            true,
-            true,
-            '/tmp',
-            '/tmp',
-            '/tmp',
-            '/tmp',
-            '/tmp/cli',
-            'UNIX',
-        );
     }
 
     private function logManagerReturning(Logger $logger): LogManager

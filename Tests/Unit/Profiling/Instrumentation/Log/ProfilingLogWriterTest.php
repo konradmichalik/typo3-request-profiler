@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentation\Log;
 
+use KonradMichalik\Ttt\Attribute\WithSingleton;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\LogCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,18 +27,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithSingleton(LogCollector::class, LogCollector::class)]
 final class ProfilingLogWriterTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        GeneralUtility::setSingletonInstance(LogCollector::class, new LogCollector());
-    }
-
-    protected function tearDown(): void
-    {
-        GeneralUtility::purgeInstances();
-    }
-
     #[Test]
     public function writeLogRecordsLevelAndComponentIntoSharedCollector(): void
     {

@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
+use KonradMichalik\Ttt\Http\Requests;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{PageSection, ProfileContext};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Routing\PageArguments;
 use TYPO3\CMS\Frontend\Page\PageInformation;
 
@@ -43,7 +45,7 @@ final class PageSectionTest extends TestCase
     #[Test]
     public function collectReturnsNullWithoutPageInformation(): void
     {
-        self::assertNull($this->subject->collect($this->context(new ServerRequest('https://example.com/', 'GET'))));
+        self::assertNull($this->subject->collect($this->context(Requests::get('https://example.com/')->build())));
     }
 
     #[Test]
@@ -51,8 +53,9 @@ final class PageSectionTest extends TestCase
     {
         $pageInformation = new PageInformation();
         $pageInformation->setId(42);
-        $request = (new ServerRequest('https://example.com/', 'GET'))
-            ->withAttribute('frontend.page.information', $pageInformation);
+        $request = Requests::get('https://example.com/')
+            ->withAttribute('frontend.page.information', $pageInformation)
+            ->build();
 
         self::assertSame(['id' => 42, 'type' => 0], $this->subject->collect($this->context($request)));
     }
@@ -62,14 +65,15 @@ final class PageSectionTest extends TestCase
     {
         $pageInformation = new PageInformation();
         $pageInformation->setId(7);
-        $request = (new ServerRequest('https://example.com/', 'GET'))
+        $request = Requests::get('https://example.com/')
             ->withAttribute('frontend.page.information', $pageInformation)
-            ->withAttribute('routing', new PageArguments(7, '98', []));
+            ->withAttribute('routing', new PageArguments(7, '98', []))
+            ->build();
 
         self::assertSame(['id' => 7, 'type' => 98], $this->subject->collect($this->context($request)));
     }
 
-    private function context(ServerRequest $request): ProfileContext
+    private function context(ServerRequestInterface $request): ProfileContext
     {
         return new ProfileContext($request, new Response(), 'tok', 1.0);
     }
