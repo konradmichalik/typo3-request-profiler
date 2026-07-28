@@ -39,7 +39,7 @@ final readonly class Duration
     public static function fromString(string $value): self
     {
         if (1 !== preg_match('/^(\d+)([smh]?)$/', trim($value), $matches)) {
-            throw new InvalidArgumentException('Invalid duration "'.$value.'". Use a plain second count or a suffix of s, m, or h (e.g. "15m").');
+            throw new InvalidArgumentException('Invalid duration "'.$value.'". Use a plain second count or a suffix of s, m, or h (e.g. "15m").', 6415078150);
         }
 
         $amount = (int) $matches[1];
@@ -50,7 +50,7 @@ final readonly class Duration
         };
 
         if ($seconds <= 0) {
-            throw new InvalidArgumentException('Duration must be greater than zero.');
+            throw new InvalidArgumentException('Duration must be greater than zero.', 2133962696);
         }
 
         return new self($seconds);
