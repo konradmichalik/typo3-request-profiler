@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Middleware;
 
+use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerActivation, ProfilerStateService};
 use KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ProfileContext, ProfileSection, TimingSection};
@@ -40,6 +41,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     {
         putenv('TYPO3_REQUEST_PROFILER');
         putenv('TYPO3_REQUEST_PROFILER_MIN_MS');
+        (new ProfilerStateService())->deactivate();
         parent::tearDown();
     }
 
@@ -50,7 +52,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
         // must short-circuit: the handler response is returned unchanged and no
         // profile file is created.
         $requestId = new RequestId();
-        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([]));
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([]), $this->activation());
 
         $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
 
@@ -64,7 +66,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     public function writesProfileInDevelopmentContext(): void
     {
         $requestId = new RequestId();
-        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]));
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]), $this->activation());
 
         $this->inDevelopmentContext(function () use ($middleware): void {
             $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
@@ -76,11 +78,29 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writesProfileWhenStateFileToggleIsActiveOutsideDevelopmentContext(): void
+    {
+        $requestId = new RequestId();
+        $stateService = new ProfilerStateService();
+        $stateService->activate(Duration::fromString('1m'));
+        $middleware = new PerformanceProfilerMiddleware(
+            $requestId,
+            new ProfileWriter([new TimingSection()]),
+            new ProfilerActivation($stateService),
+        );
+
+        $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertFileExists(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
     public function skipsProfilingWhenBelowMinimumDuration(): void
     {
         putenv('TYPO3_REQUEST_PROFILER_MIN_MS=600000');
         $requestId = new RequestId();
-        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]));
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]), $this->activation());
 
         $this->inDevelopmentContext(function () use ($middleware): void {
             $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
@@ -93,7 +113,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     public function failsSafeAndReturnsResponseWhenProfileWritingThrows(): void
     {
         $requestId = new RequestId();
-        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([$this->throwingSection()]));
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([$this->throwingSection()]), $this->activation());
 
         $this->inDevelopmentContext(function () use ($middleware): void {
             $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
@@ -102,6 +122,11 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
         });
 
         self::assertFileDoesNotExist(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    private function activation(): ProfilerActivation
+    {
+        return new ProfilerActivation(new ProfilerStateService());
     }
 
     private function throwingSection(): ProfileSection
