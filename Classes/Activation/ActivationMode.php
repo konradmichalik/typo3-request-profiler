@@ -23,4 +23,5 @@ enum ActivationMode: string
     case None = 'none';
     case StateFile = 'stateFile';
     case Context = 'context';
+    case Header = 'header';
 }
