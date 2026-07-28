@@ -196,11 +196,14 @@ final class ProfileWriterTest extends FunctionalTestCase
         file_put_contents($staleFile, '{}');
         touch($staleFile, time() - 3600);
 
+        $previousMaxAge = getenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
         putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S=60');
         try {
             $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh', 1.0);
         } finally {
-            putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
+            false === $previousMaxAge
+                ? putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S')
+                : putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S='.$previousMaxAge);
         }
 
         self::assertFileDoesNotExist($staleFile);
@@ -216,7 +219,15 @@ final class ProfileWriterTest extends FunctionalTestCase
         file_put_contents($oldFile, '{}');
         touch($oldFile, time() - 3600);
 
-        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh2', 1.0);
+        $previousMaxAge = getenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
+        putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
+        try {
+            $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh2', 1.0);
+        } finally {
+            false === $previousMaxAge
+                ? putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S')
+                : putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S='.$previousMaxAge);
+        }
 
         self::assertFileExists($oldFile);
     }
