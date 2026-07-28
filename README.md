@@ -104,6 +104,12 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "method": "GET",
   "url": "https://example.ddev.site/",
   "status": 200,
+  "meta": {
+    "activationMode": "context",
+    "applicationContext": "Development",
+    "typo3Version": "13.4.6",
+    "extensionVersion": "0.4.0"
+  },
   "page": { "id": 1, "type": 0 },
   "cache": { "hit": false, "cacheable": false, "disabled_reasons": ["&no_cache=1 query parameter was given"] },
   "timing": { "total_ms": 142.5 },
@@ -154,6 +160,10 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `method` | string | HTTP request method. |
 | `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. |
+| `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/later `header`), `applicationContext`, `typo3Version`, `extensionVersion` — lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. |
+
+> [!NOTE]
+> Adding the `meta` block is an additive change and does not bump `schemaVersion` — existing top-level keys are unchanged. Future additive changes (new optional fields/sections) follow the same rule; only a breaking change (renamed/removed/restructured field) bumps `schemaVersion`.
 
 **Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
 
