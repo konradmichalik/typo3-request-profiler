@@ -15,10 +15,11 @@ use KonradMichalik\Typo3RequestProfiler\Configuration;
 
 defined('TYPO3') || exit;
 
-// Development always, every other context only via explicit opt-in. Evaluated
-// here (and therefore cached), so toggling FORCE requires a cache flush.
-if (Configuration::isProfilingActive()) {
-    Configuration::warnIfForcedOutsideDevelopment();
-    Configuration::registerProfilingDriverMiddleware();
-    Configuration::registerProfilingLogWriter();
-}
+// Registered unconditionally (query/log instrumentation is a cheap in-memory
+// append) so the state-file toggle and activation decision, both evaluated
+// per request, can turn on full profiling without needing a cache flush.
+// Whether a profile actually gets persisted is decided per request by
+// ProfilerActivation, not here.
+Configuration::warnIfForcedOutsideDevelopment();
+Configuration::registerProfilingDriverMiddleware();
+Configuration::registerProfilingLogWriter();
