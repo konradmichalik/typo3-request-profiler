@@ -110,6 +110,53 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function headerTriggerAddsArtifactAndNoStoreHeadersAndWritesTheProfile(): void
+    {
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]), $this->activation());
+        $request = (new ServerRequest('https://example.com/', 'GET'))->withHeader('Typo3-Profiler', '1');
+
+        $this->inDevelopmentContext(function () use ($middleware, $request, $requestId): void {
+            $response = $middleware->process($request, $this->handler());
+
+            self::assertSame((string) $requestId, $response->getHeaderLine('Typo3-Profiler-Artifact'));
+            self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+            self::assertFalse($response->hasHeader('Vary'));
+        });
+
+        self::assertFileExists(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
+    public function headerTriggerBypassesTheMinimumDurationSampling(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_MIN_MS=600000');
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]), $this->activation());
+        $request = (new ServerRequest('https://example.com/', 'GET'))->withHeader('Typo3-Profiler', '1');
+
+        $this->inDevelopmentContext(function () use ($middleware, $request): void {
+            $middleware->process($request, $this->handler());
+        });
+
+        self::assertFileExists(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
+    public function invalidHeaderTokenOutsideDevelopmentFailsSilentlyWithNoResponseMutation(): void
+    {
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([]), $this->activation());
+        $request = (new ServerRequest('https://example.com/', 'GET'))->withHeader('Typo3-Profiler', 'wrong-token');
+
+        $response = $middleware->process($request, $this->handler());
+
+        self::assertFalse($response->hasHeader('Typo3-Profiler-Artifact'));
+        self::assertFalse($response->hasHeader('Cache-Control'));
+        self::assertFileDoesNotExist(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
     public function failsSafeAndReturnsResponseWhenProfileWritingThrows(): void
     {
         $requestId = new RequestId();
