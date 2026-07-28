@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
 
 use ArrayIterator;
+use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, LogCollector, QueryCollector};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowQueriesSection, TimingSection};
@@ -21,6 +22,7 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Section\QueryAggregator;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Cache\CacheInstruction;
 use TYPO3\CMS\Frontend\Page\PageInformation;
@@ -90,7 +92,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $this->logCollector->record('warning', 'App.Service.Foo');
         $this->logCollector->record('warning', 'App.Service.Foo');
 
-        $this->subject->write($request, new Response(), 'tok_main', 12.5);
+        $this->subject->write($request, new Response(), 'tok_main', 12.5, ActivationMode::Context);
 
         $profile = $this->readProfile('tok_main');
         self::assertSame(ProfileWriter::SCHEMA_VERSION, $profile['schemaVersion']);
@@ -111,12 +113,27 @@ final class ProfileWriterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writeAddsProvenanceMetadata(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        $this->subject->write($request, new Response(), 'tok_meta', 1.0, ActivationMode::StateFile);
+
+        $meta = $this->readProfile('tok_meta')['meta'];
+        self::assertSame('stateFile', $meta['activationMode']);
+        self::assertSame((string) Environment::getContext(), $meta['applicationContext']);
+        self::assertSame((new Typo3Version())->getVersion(), $meta['typo3Version']);
+        self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $meta['extensionVersion']);
+    }
+
+    #[Test]
     public function writeMasksQueryStringValuesInProfileUrl(): void
     {
         $request = (new ServerRequest('https://example.com/search?q=john%40example.com&page=2', 'GET'))
             ->withAttribute('frontend.cache.instruction', new CacheInstruction());
 
-        $this->subject->write($request, new Response(), 'tok_masked', 1.0);
+        $this->subject->write($request, new Response(), 'tok_masked', 1.0, ActivationMode::Context);
 
         self::assertSame(
             'https://example.com/search?q=?&page=?',
@@ -135,10 +152,10 @@ final class ProfileWriterTest extends FunctionalTestCase
             ->withAttribute('frontend.cache.instruction', new CacheInstruction());
         $this->logCollector->record('notice', 'X');
 
-        $this->subject->write($request, new Response(), 'tok_order', 1.0);
+        $this->subject->write($request, new Response(), 'tok_order', 1.0, ActivationMode::Context);
 
         self::assertSame(
-            ['schemaVersion', 'token', 'time', 'method', 'url', 'status', 'page', 'cache', 'timing', 'memory', 'php', 'queries', 'slow_queries', 'duplicate_queries', 'log'],
+            ['schemaVersion', 'token', 'time', 'method', 'url', 'status', 'meta', 'page', 'cache', 'timing', 'memory', 'php', 'queries', 'slow_queries', 'duplicate_queries', 'log'],
             array_keys($this->readProfile('tok_order')),
         );
     }
@@ -152,7 +169,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $request = (new ServerRequest('https://example.com/', 'GET'))
             ->withAttribute('frontend.cache.instruction', $instruction);
 
-        $this->subject->write($request, new Response(), 'tok_uncached', 5.0);
+        $this->subject->write($request, new Response(), 'tok_uncached', 5.0, ActivationMode::Context);
 
         $profile = $this->readProfile('tok_uncached');
         self::assertFalse($profile['cache']['cacheable']);
@@ -166,7 +183,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $request = (new ServerRequest('https://example.com/', 'GET'))
             ->withAttribute('frontend.cache.instruction', new CacheInstruction());
 
-        $this->subject->write($request, new Response(), 'tok_nolog', 1.0);
+        $this->subject->write($request, new Response(), 'tok_nolog', 1.0, ActivationMode::Context);
 
         self::assertArrayNotHasKey('log', $this->readProfile('tok_nolog'));
     }
@@ -177,7 +194,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         putenv('TYPO3_REQUEST_PROFILER_KEEP=3');
         try {
             for ($i = 1; $i <= 5; ++$i) {
-                $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'keep_'.$i, 1.0);
+                $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'keep_'.$i, 1.0, ActivationMode::Context);
             }
         } finally {
             putenv('TYPO3_REQUEST_PROFILER_KEEP');
@@ -198,7 +215,7 @@ final class ProfileWriterTest extends FunctionalTestCase
 
         putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S=60');
         try {
-            $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh', 1.0);
+            $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh', 1.0, ActivationMode::Context);
         } finally {
             putenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
         }
@@ -216,7 +233,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         file_put_contents($oldFile, '{}');
         touch($oldFile, time() - 3600);
 
-        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh2', 1.0);
+        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'fresh2', 1.0, ActivationMode::Context);
 
         self::assertFileExists($oldFile);
     }
@@ -227,7 +244,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         $request = (new ServerRequest('https://example.com/', 'GET'))
             ->withAttribute('frontend.cache.instruction', new CacheInstruction());
 
-        $this->subject->write($request, new Response(), 'tok_atomic', 1.0);
+        $this->subject->write($request, new Response(), 'tok_atomic', 1.0, ActivationMode::Context);
 
         $directory = Environment::getVarPath().'/log/profiles';
         self::assertFileExists($directory.'/tok_atomic.json');
@@ -242,7 +259,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         // A directory occupying the target path makes the atomic rename fail.
         GeneralUtility::mkdir_deep($directory.'/tok_rename.json');
 
-        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_rename', 1.0);
+        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_rename', 1.0, ActivationMode::Context);
 
         self::assertFileDoesNotExist($directory.'/tok_rename.json.tmp');
     }
@@ -255,7 +272,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         // A directory at the temp path makes the temp write fail.
         GeneralUtility::mkdir_deep($directory.'/tok_temp.json.tmp');
 
-        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_temp', 1.0);
+        $this->subject->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_temp', 1.0, ActivationMode::Context);
 
         self::assertFileDoesNotExist($directory.'/tok_temp.json');
     }
@@ -265,7 +282,7 @@ final class ProfileWriterTest extends FunctionalTestCase
     {
         $writer = new ProfileWriter(new ArrayIterator([new TimingSection()]));
 
-        $writer->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_iter', 1.0);
+        $writer->write(new ServerRequest('https://example.com/', 'GET'), new Response(), 'tok_iter', 1.0, ActivationMode::Context);
 
         self::assertArrayHasKey('timing', $this->readProfile('tok_iter'));
     }

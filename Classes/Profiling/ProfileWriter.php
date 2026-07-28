@@ -13,14 +13,17 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling;
 
+use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ProfileContext, ProfileSection};
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Traversable;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_slice;
 use function count;
+use function dirname;
 use function iterator_to_array;
 
 /**
@@ -61,6 +64,7 @@ final readonly class ProfileWriter
         ResponseInterface $response,
         string $token,
         float $totalMs,
+        ActivationMode $activationMode,
     ): void {
         $directory = self::defaultDirectory();
         GeneralUtility::mkdir_deep($directory);
@@ -74,6 +78,7 @@ final readonly class ProfileWriter
             'method' => $request->getMethod(),
             'url' => UrlSanitizer::maskQueryValues($request->getUri()),
             'status' => $response->getStatusCode(),
+            'meta' => $this->meta($activationMode),
         ];
 
         foreach ($this->sortedSections() as $section) {
@@ -92,6 +97,41 @@ final readonly class ProfileWriter
         }
 
         $this->prune($directory);
+    }
+
+    /**
+     * Provenance metadata for machine consumers (LLM agents, CLI, ai-mate MCP
+     * tools): why the profile was taken and in what environment, so a
+     * near-empty profile (e.g. a full page-cache hit) can be told apart from
+     * "wrong mode/context" without guessing.
+     *
+     * @return array{activationMode: string, applicationContext: string, typo3Version: string, extensionVersion: string}
+     */
+    private function meta(ActivationMode $activationMode): array
+    {
+        return [
+            'activationMode' => $activationMode->value,
+            'applicationContext' => (string) Environment::getContext(),
+            'typo3Version' => (new Typo3Version())->getVersion(),
+            'extensionVersion' => $this->extensionVersion(),
+        ];
+    }
+
+    /**
+     * Reads the version straight out of ext_emconf.php instead of going
+     * through PackageManager: the extension's own metadata must be
+     * resolvable regardless of whether it happens to be an "active" package
+     * in the current bootstrap (e.g. in this extension's own functional test
+     * sandbox, it isn't).
+     */
+    private function extensionVersion(): string
+    {
+        $contents = @file_get_contents(dirname(__DIR__, 2).'/ext_emconf.php');
+        if (false === $contents) {
+            return '';
+        }
+
+        return 1 === preg_match("/'version'\s*=>\s*'([^']+)'/", $contents, $matches) ? $matches[1] : '';
     }
 
     /**

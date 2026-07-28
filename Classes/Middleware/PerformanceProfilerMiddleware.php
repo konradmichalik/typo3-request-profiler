@@ -35,7 +35,8 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (ActivationMode::None === $this->activation->decide()) {
+        $activationMode = $this->activation->decide();
+        if (ActivationMode::None === $activationMode) {
             return $handler->handle($request);
         }
 
@@ -56,6 +57,7 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
                 $response,
                 (string) $this->requestId,
                 $totalMs,
+                $activationMode,
             );
         } catch (Throwable) {
             // Fail-safe: profiling must never break the response.
