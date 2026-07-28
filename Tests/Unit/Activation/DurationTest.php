@@ -48,6 +48,7 @@ final class DurationTest extends TestCase
         yield 'hours suffix' => ['2h', 7200];
         yield 'plain seconds' => ['45', 45];
         yield 'padded value' => [' 5m ', 300];
+        yield 'exactly the maximum' => ['604800', 604_800];
     }
 
     #[Test]
@@ -69,5 +70,9 @@ final class DurationTest extends TestCase
         yield 'negative' => ['-5m'];
         yield 'zero' => ['0m'];
         yield 'empty' => [''];
+        yield 'one second above the maximum' => ['604801'];
+        yield 'just above the maximum via hours' => ['169h']; // 608400s
+        yield 'PHP_INT_MAX as plain seconds' => ['9223372036854775807'];
+        yield 'overflows int multiplication via hours suffix' => ['99999999999999999999h'];
     }
 }
