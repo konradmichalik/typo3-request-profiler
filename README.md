@@ -82,10 +82,10 @@ vendor/bin/typo3 profiler:activate --duration=1h  # custom duration: Ns, Nm, or 
 vendor/bin/typo3 profiler:deactivate               # turn it back off immediately
 ```
 
-The toggle writes a small state file (with an expiry timestamp) under `var/log/`; an expired, missing, or unreadable state file always counts as inactive. Activation checks are cheapest-first: the `TYPO3_REQUEST_PROFILER=0` kill switch wins over everything, then the state-file toggle, then the `Development`/`FORCE` context.
+The toggle writes a small state file (with an expiry timestamp) under `var/log/`; an expired, missing, or unreadable state file always counts as inactive. Activation checks are cheapest-first: the `TYPO3_REQUEST_PROFILER=0` kill switch wins over everything, then the state-file toggle, then the `Development`/`FORCE` context. `--duration` accepts 1 second up to 7 days; anything outside that range is rejected up front.
 
 > [!NOTE]
-> The state-file mechanism is per-host: in a multi-node setup, `profiler:activate` only affects the node it runs on.
+> The state-file mechanism follows `var/log`: if it's node-local, `profiler:activate` only affects the node it runs on. If `var/` is a shared directory across a multi-node setup, activation applies to every node reading that shared state file — plan the toggle's scope accordingly.
 
 ## 🎯 HTTP header trigger (per-request correlation)
 

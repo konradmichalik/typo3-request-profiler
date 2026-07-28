@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Command;
 
 use InvalidArgumentException;
 use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerStateService};
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
@@ -42,7 +43,7 @@ final class ProfilerActivateCommand extends Command
             'duration',
             null,
             InputOption::VALUE_REQUIRED,
-            'How long to keep profiling active, e.g. "15m", "1h", "300s" or a plain second count.',
+            'How long to keep profiling active, e.g. "15m", "1h", "300s" or a plain second count (max 7 days).',
             '15m',
         );
     }
@@ -64,7 +65,13 @@ final class ProfilerActivateCommand extends Command
             return Command::FAILURE;
         }
 
-        $expiresAt = $this->stateService->activate($duration);
+        try {
+            $expiresAt = $this->stateService->activate($duration);
+        } catch (RuntimeException $exception) {
+            $output->writeln('<error>'.$exception->getMessage().'</error>');
+
+            return Command::FAILURE;
+        }
 
         $output->writeln(sprintf(
             '<info>Profiling activated until %s (%d seconds).</info>',

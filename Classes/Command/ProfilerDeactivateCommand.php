@@ -38,7 +38,11 @@ final class ProfilerDeactivateCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->stateService->deactivate();
+        if (!$this->stateService->deactivate()) {
+            $output->writeln('<error>Failed to remove the profiler activation state file.</error>');
+
+            return Command::FAILURE;
+        }
 
         $output->writeln('<info>Profiling deactivated.</info>');
 

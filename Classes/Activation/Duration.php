@@ -27,6 +27,16 @@ final readonly class Duration
 {
     private const DEFAULT_SECONDS = 900;
 
+    /**
+     * A week is already far beyond what a "temporary" toggle should ever need.
+     * Rejecting anything above it also rules out the two ways an oversized
+     * numeric string could otherwise misbehave: suffixed multiplication
+     * (`h`/`m`) overflowing int into float, and a plain value near
+     * PHP_INT_MAX later overflowing `time() + seconds` in
+     * {@see ProfilerStateService::activate()}.
+     */
+    private const MAX_SECONDS = 604_800;
+
     private function __construct(
         private int $seconds,
     ) {}
@@ -49,8 +59,8 @@ final readonly class Duration
             default => $amount,
         };
 
-        if ($seconds <= 0) {
-            throw new InvalidArgumentException('Duration must be greater than zero.', 2133962696);
+        if ($seconds <= 0 || $seconds > self::MAX_SECONDS) {
+            throw new InvalidArgumentException('Duration must be between 1 second and 7 days.', 2133962696);
         }
 
         return new self($seconds);
