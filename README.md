@@ -4,9 +4,7 @@
 
 # TYPO3 extension `typo3_request_profiler`
 
-[![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-request-profiler?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
-[![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-request-profiler?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
-![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.0-orange.svg)
+![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.3-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-request-profiler?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
@@ -15,12 +13,12 @@
 
 </div>
 
-A _dev-only_ TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request — SQL queries, N+1 patterns, cache state, and timing — to `var/log/profiles/{request_id}.json`.
+A _dev-only_ TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request (SQL queries, N+1 patterns, cache state, and timing) to `var/log/profiles/{request_id}.json`.
 
 > [!IMPORTANT]
-> This extension is **active by default only in a Development context** (`Environment::getContext()->isDevelopment()`). Outside Development it stays off and collects no data unless explicitly opted in via `TYPO3_REQUEST_PROFILER_FORCE=1` (intended for staging, never real production — see [Configuration](#-configuration)).
+> This extension is **active by default only in a Development context** (`Environment::getContext()->isDevelopment()`). Outside Development it stays off and collects no data unless explicitly opted in; see [Activation](docs/ACTIVATION.md).
 
-The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) — and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces — but records them as compact, machine-readable JSON instead of an interactive panel.
+The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces, but records them as compact, machine-readable JSON instead of an interactive panel.
 
 **What it captures per request:**
 
@@ -29,6 +27,7 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 - Cache hit/miss state with disabled reasons
 - Log activity per request (count by level + noisiest components)
 - Optional call-site origin (`Class::method (file:line)`) for every flagged query
+- Optional PSR-14 event timing (count + the most expensive event classes)
 
 ## 🔥 Installation
 
@@ -54,173 +53,34 @@ composer require --dev konradmichalik/typo3-request-profiler
 
 Download the zip file from [TYPO3 extension repository (TER)](https://extensions.typo3.org/extension/typo3_request_profiler).
 
-## ⚙️ Configuration
+## 💡 Example
 
-The profiler is controlled entirely via environment variables:
-
-| Variable | Default | Effect |
-|----------|---------|--------|
-| `TYPO3_REQUEST_PROFILER` | (on) | Set to `0` to disable profiling for a request/process. |
-| `TYPO3_REQUEST_PROFILER_FORCE` | (off) | Set to `1` to enable profiling outside the Development context (e.g. staging). Must be set deliberately, never in real production. |
-| `TYPO3_REQUEST_PROFILER_MIN_MS` | `0` | Only persist requests whose total time exceeds this threshold (ms). |
-| `TYPO3_REQUEST_PROFILER_KEEP` | `50` | Number of most-recent profiles to retain; older files are pruned automatically. |
-| `TYPO3_REQUEST_PROFILER_MAX_AGE_S` | (off) | Also prune profiles older than this many seconds, on top of `..._KEEP`. Disabled by default. |
-| `TYPO3_REQUEST_PROFILER_TRACE` | (off) | Set to `1` to capture the calling `Class::method (file:line)` for each query (added as `origin` to `slow_queries`/`duplicate_queries`). |
-| `TYPO3_REQUEST_PROFILER_EVENTS` | (off) | Set to `1` to time dispatched PSR-14 events and add an `events` section (count + the most expensive event classes). |
-| `TYPO3_REQUEST_PROFILER_SECRET` | (unset) | Shared secret for the `Typo3-Profiler` HTTP header trigger outside Development (see below). Provision via environment variable, never persisted extension configuration. |
-
-> [!NOTE]
-> `TYPO3_REQUEST_PROFILER=0` short-circuits everything on each request (kill switch) and needs no cache flush. `TYPO3_REQUEST_PROFILER_FORCE` and the `profiler:activate` toggle (below) are also evaluated live per request — query/log instrumentation is wired up unconditionally (a cheap in-memory append per request), so neither needs a cache flush to take effect.
-
-## 🧑‍💻 Temporary activation toggle
-
-Besides the `Development`/`FORCE` context switch, profiling can be turned on temporarily and per-instance — an xdebug-style toggle, useful for a quick investigation on an environment that otherwise stays off:
-
-```bash
-vendor/bin/typo3 profiler:activate                # 15 minutes (default)
-vendor/bin/typo3 profiler:activate --duration=1h  # custom duration: Ns, Nm, or Nh
-vendor/bin/typo3 profiler:deactivate               # turn it back off immediately
-```
-
-The toggle writes a small state file (with an expiry timestamp) under `var/log/`; an expired, missing, or unreadable state file always counts as inactive. Activation checks are cheapest-first: the `TYPO3_REQUEST_PROFILER=0` kill switch wins over everything, then the state-file toggle, then the `Development`/`FORCE` context. `--duration` accepts 1 second up to 7 days; anything outside that range is rejected up front.
-
-> [!NOTE]
-> The state-file mechanism follows `var/log`: if it's node-local, `profiler:activate` only affects the node it runs on. If `var/` is a shared directory across a multi-node setup, activation applies to every node reading that shared state file — plan the toggle's scope accordingly.
-
-## 🎯 HTTP header trigger (per-request correlation)
-
-For automated tooling (Playwright, curl, LLM agents) that needs to know exactly which artifact belongs to which request — "the newest profile" is ambiguous once requests run concurrently — send the `Typo3-Profiler` header:
-
-```bash
-# Development: no token needed
-curl -H "Typo3-Profiler: 1" https://example.ddev.site/
-
-# Outside Development: token must match TYPO3_REQUEST_PROFILER_SECRET
-curl -H "Typo3-Profiler: $TYPO3_REQUEST_PROFILER_SECRET" https://staging.example.org/
-```
-
-A valid trigger adds a response header with the artifact's identity, and marks the response `Cache-Control: no-store` so the header never ends up in a CDN/Varnish cache:
-
-```
-Typo3-Profiler-Artifact: <token>
-```
-
-Resolve `<token>.json` under `var/log/profiles/` (or via the CLI/MCP tooling) to get the artifact. The trigger works independently of whatever already made this request profiled (Development context, the state-file toggle) — even if profiling was already active, sending the header still gets you the correlation header and bypasses `TYPO3_REQUEST_PROFILER_MIN_MS` sampling for that one request.
-
-> [!IMPORTANT]
-> Outside Development, the trigger is **hard-disabled** unless `TYPO3_REQUEST_PROFILER_SECRET` is configured (minimum 32 random bytes recommended, e.g. `openssl rand -hex 32`). An invalid or missing token is indistinguishable from not sending the header at all — no error, no hint, no response change — so the endpoint can't be used to probe whether the feature or a valid token exists. Accept the trigger only over TLS in that case; behind a reverse proxy this depends on correct `reverseProxySSL`/trusted-proxy configuration.
-
-> [!NOTE]
-> A profile of a full page-cache hit is nearly empty — this is expected, not a bug; use the `meta.activationMode` field together with the section keys present to tell that apart from "wrong mode/context". Bypassing the cache would change the very behavior being profiled, so profile a deliberately warmed or cleared cache instead of relying on `no_cache` (discouraged in modern TYPO3 anyway).
-
-> [!TIP]
-> `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
-
-> [!TIP]
-> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. Event timing follows the same activation gate as the rest of the profiler, so it also works on staging together with `TYPO3_REQUEST_PROFILER_FORCE=1`.
-
-## 💡 Profile Format
-
-Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
+Start it up in a `Development` context (no configuration needed) and every request writes a compact JSON profile to `var/log/profiles/{request_id}.json`:
 
 ```json
 {
   "schemaVersion": 1,
   "token": "<RequestId>",
-  "time": "2026-06-15T10:00:00+00:00",
-  "method": "GET",
   "url": "https://example.ddev.site/",
   "status": 200,
-  "meta": {
-    "activationMode": "context",
-    "applicationContext": "Development",
-    "typo3Version": "13.4.6",
-    "extensionVersion": "0.4.0"
-  },
-  "page": { "id": 1, "type": 0 },
-  "cache": { "hit": false, "cacheable": false, "disabled_reasons": ["&no_cache=1 query parameter was given"] },
+  "meta": { "activationMode": "context" },
   "timing": { "total_ms": 142.5 },
-  "memory": { "peak_mb": 16.1 },
-  "php": { "included_files": 432 },
   "queries": { "count": 101, "total_ms": 38.2 },
   "slow_queries": [
     { "sql": "SELECT * FROM pages WHERE slug = ? ORDER BY slug desc", "ms": 12.4 }
-  ],
-  "duplicate_queries": [
-    { "sql": "SELECT COUNT(*) FROM tt_content WHERE pid = ? AND deleted = ?", "count": 100, "total_ms": 31.4 }
-  ],
-  "log": {
-    "count": 3,
-    "by_level": { "warning": 2, "notice": 1 },
-    "top_components": [
-      { "component": "TYPO3.CMS.Core.Authentication.BackendUserAuthentication", "count": 2 }
-    ]
-  },
-  "events": {
-    "count": 142,
-    "total_ms": 12.3,
-    "top": [
-      { "event": "TYPO3\\CMS\\Core\\Cache\\Event\\CacheFlushEvent", "count": 100, "total_ms": 8.1 }
-    ]
-  }
+  ]
 }
 ```
 
-> [!NOTE]
-> The `log` section only appears when the request produced log entries. Only the level and component are recorded — never the message body — so no user data leaks into the profile.
+That's the gist. The full artifact also carries cache state, memory usage, PHP include count, N+1 duplicate-query detection, log activity, and optional PSR-14 event timing. See [Profile Format](docs/PROFILE-FORMAT.md) for the complete schema.
 
-> [!NOTE]
-> The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1`.
+## 📚 Documentation
 
-### Profile schema
-
-The artifact carries an explicit, versioned schema contract via the top-level
-`schemaVersion` field. It is written first so it is immediately visible in every file.
-
-**Top-level fields** (always present):
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `schemaVersion` | int | Schema contract version of the artifact (currently `1`). |
-| `token` | string | Request identifier; also the file name. |
-| `time` | string | Request time as ISO 8601 (`date('c')`). |
-| `method` | string | HTTP request method. |
-| `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
-| `status` | int | HTTP response status code. |
-| `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion` — lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent — see [HTTP header trigger](#-http-header-trigger-per-request-correlation). |
-
-> [!NOTE]
-> Adding the `meta` block is an additive change and does not bump `schemaVersion` — existing top-level keys are unchanged. Future additive changes (new optional fields/sections) follow the same rule; only a breaking change (renamed/removed/restructured field) bumps `schemaVersion`.
-
-**Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
-
-| Key | Shape |
-|-----|-------|
-| `page` | `{ id, type }` |
-| `cache` | `{ hit, cacheable, disabled_reasons[] }` |
-| `timing` | `{ total_ms }` |
-| `memory` | `{ peak_mb }` |
-| `php` | `{ included_files }` |
-| `queries` | `{ count, total_ms }` |
-| `slow_queries` | `[{ sql, ms, origin? }]` |
-| `duplicate_queries` | `[{ sql, count, total_ms, origin? }]` |
-| `log` | `{ count, by_level{}, top_components[{ component, count }] }` |
-| `events` | `{ count, total_ms, top[{ event, count, total_ms }] }` |
-
-> [!NOTE]
-> `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.
-
-### Reading profiles
-
-`KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader` is the supported, framework-agnostic read API for these artifacts — external consumers should use it instead of re-implementing the `glob`/sort/`json_decode` logic:
-
-| Method | Returns |
-|--------|---------|
-| `all()` | All profiles, newest first. |
-| `latest(int $limit = 10)` | The `$limit` newest profiles, newest first. |
-| `byToken(string $token)` | A single profile by its token, or `null` if unknown. |
-
-The reader is directory-based and carries no framework dependency — its constructor takes the profiles directory (`new ProfileReader($directory)`). On the TYPO3 side, that directory is `ProfileWriter::defaultDirectory()` (the same source the writer persists to). Its public signature is kept stable as a contract for consumers.
+| Topic | What's inside |
+|-------|---------------|
+| [Activation](docs/ACTIVATION.md) | Development context, forcing it elsewhere via an env var, the `profiler:activate` CLI toggle, and the HTTP header trigger for per-request correlation |
+| [Configuration](docs/CONFIGURATION.md) | Sampling threshold, retention, query tracing, and PSR-14 event timing |
+| [Profile Format](docs/PROFILE-FORMAT.md) | The full JSON schema, provenance metadata, and the `ProfileReader` read API |
 
 ## 🧑‍💻 Contributing
 
