@@ -67,6 +67,7 @@ The profiler is controlled entirely via environment variables:
 | `TYPO3_REQUEST_PROFILER_MAX_AGE_S` | (off) | Also prune profiles older than this many seconds, on top of `..._KEEP`. Disabled by default. |
 | `TYPO3_REQUEST_PROFILER_TRACE` | (off) | Set to `1` to capture the calling `Class::method (file:line)` for each query (added as `origin` to `slow_queries`/`duplicate_queries`). |
 | `TYPO3_REQUEST_PROFILER_EVENTS` | (off) | Set to `1` to time dispatched PSR-14 events and add an `events` section (count + the most expensive event classes). |
+| `TYPO3_REQUEST_PROFILER_SECRET` | (unset) | Shared secret for the `Typo3-Profiler` HTTP header trigger outside Development (see below). Provision via environment variable, never persisted extension configuration. |
 
 > [!NOTE]
 > `TYPO3_REQUEST_PROFILER=0` short-circuits everything on each request (kill switch) and needs no cache flush. `TYPO3_REQUEST_PROFILER_FORCE` and the `profiler:activate` toggle (below) are also evaluated live per request — query/log instrumentation is wired up unconditionally (a cheap in-memory append per request), so neither needs a cache flush to take effect.
@@ -86,6 +87,32 @@ The toggle writes a small state file (with an expiry timestamp) under `var/log/`
 > [!NOTE]
 > The state-file mechanism follows `var/log`: if it's node-local, `profiler:activate` only affects the node it runs on. If `var/` is a shared directory across a multi-node setup, activation applies to every node reading that shared state file — plan the toggle's scope accordingly.
 
+## 🎯 HTTP header trigger (per-request correlation)
+
+For automated tooling (Playwright, curl, LLM agents) that needs to know exactly which artifact belongs to which request — "the newest profile" is ambiguous once requests run concurrently — send the `Typo3-Profiler` header:
+
+```bash
+# Development: no token needed
+curl -H "Typo3-Profiler: 1" https://example.ddev.site/
+
+# Outside Development: token must match TYPO3_REQUEST_PROFILER_SECRET
+curl -H "Typo3-Profiler: $TYPO3_REQUEST_PROFILER_SECRET" https://staging.example.org/
+```
+
+A valid trigger adds a response header with the artifact's identity, and marks the response `Cache-Control: no-store` so the header never ends up in a CDN/Varnish cache:
+
+```
+Typo3-Profiler-Artifact: <token>
+```
+
+Resolve `<token>.json` under `var/log/profiles/` (or via the CLI/MCP tooling) to get the artifact. The trigger works independently of whatever already made this request profiled (Development context, the state-file toggle) — even if profiling was already active, sending the header still gets you the correlation header and bypasses `TYPO3_REQUEST_PROFILER_MIN_MS` sampling for that one request.
+
+> [!IMPORTANT]
+> Outside Development, the trigger is **hard-disabled** unless `TYPO3_REQUEST_PROFILER_SECRET` is configured (minimum 32 random bytes recommended, e.g. `openssl rand -hex 32`). An invalid or missing token is indistinguishable from not sending the header at all — no error, no hint, no response change — so the endpoint can't be used to probe whether the feature or a valid token exists. Accept the trigger only over TLS in that case; behind a reverse proxy this depends on correct `reverseProxySSL`/trusted-proxy configuration.
+
+> [!NOTE]
+> A profile of a full page-cache hit is nearly empty — this is expected, not a bug; use the `meta.activationMode` field together with the section keys present to tell that apart from "wrong mode/context". Bypassing the cache would change the very behavior being profiled, so profile a deliberately warmed or cleared cache instead of relying on `no_cache` (discouraged in modern TYPO3 anyway).
+
 > [!TIP]
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured — only the call site.
 
@@ -104,6 +131,12 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "method": "GET",
   "url": "https://example.ddev.site/",
   "status": 200,
+  "meta": {
+    "activationMode": "context",
+    "applicationContext": "Development",
+    "typo3Version": "13.4.6",
+    "extensionVersion": "0.4.0"
+  },
   "page": { "id": 1, "type": 0 },
   "cache": { "hit": false, "cacheable": false, "disabled_reasons": ["&no_cache=1 query parameter was given"] },
   "timing": { "total_ms": 142.5 },
@@ -154,6 +187,10 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `method` | string | HTTP request method. |
 | `url` | string | Request URI with masked query values (`?q=?&page=?`) — parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. |
+| `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion` — lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent — see [HTTP header trigger](#-http-header-trigger-per-request-correlation). |
+
+> [!NOTE]
+> Adding the `meta` block is an additive change and does not bump `schemaVersion` — existing top-level keys are unchanged. Future additive changes (new optional fields/sections) follow the same rule; only a breaking change (renamed/removed/restructured field) bumps `schemaVersion`.
 
 **Section keys** (key = `Section::name()`; each appears only when the section is enabled and produced data):
 
