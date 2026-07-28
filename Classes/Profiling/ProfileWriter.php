@@ -131,8 +131,45 @@ final readonly class ProfileWriter
 
     private function prune(string $directory): void
     {
-        $keep = $this->maxProfiles();
         $files = glob($directory.'/*.json') ?: [];
+        $files = $this->pruneExpired($files);
+        $this->pruneExcess($files);
+    }
+
+    /**
+     * Remove profiles older than TYPO3_REQUEST_PROFILER_MAX_AGE_S (disabled by
+     * default: max-count retention alone is the existing safety net).
+     *
+     * @param list<string> $files
+     *
+     * @return list<string> the files that survived age-based pruning
+     */
+    private function pruneExpired(array $files): array
+    {
+        $maxAge = $this->maxAgeSeconds();
+        if ($maxAge <= 0) {
+            return $files;
+        }
+
+        $threshold = time() - $maxAge;
+        $remaining = [];
+        foreach ($files as $file) {
+            if ((@filemtime($file) ?: 0) < $threshold) {
+                @unlink($file);
+                continue;
+            }
+            $remaining[] = $file;
+        }
+
+        return $remaining;
+    }
+
+    /**
+     * @param list<string> $files
+     */
+    private function pruneExcess(array $files): void
+    {
+        $keep = $this->maxProfiles();
         if (count($files) <= $keep) {
             return;
         }
@@ -152,5 +189,16 @@ final readonly class ProfileWriter
         $configured = (int) getenv('TYPO3_REQUEST_PROFILER_KEEP');
 
         return $configured > 0 ? $configured : self::DEFAULT_MAX_PROFILES;
+    }
+
+    /**
+     * Max age in seconds, configurable via TYPO3_REQUEST_PROFILER_MAX_AGE_S.
+     * 0 (default) disables age-based pruning.
+     */
+    private function maxAgeSeconds(): int
+    {
+        $configured = (int) getenv('TYPO3_REQUEST_PROFILER_MAX_AGE_S');
+
+        return $configured > 0 ? $configured : 0;
     }
 }

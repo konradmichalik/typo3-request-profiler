@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Middleware;
 
-use KonradMichalik\Typo3RequestProfiler\Configuration;
+use KonradMichalik\Typo3RequestProfiler\Activation\{ActivationMode, ProfilerActivation};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
@@ -30,11 +30,12 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
     public function __construct(
         private RequestId $requestId,
         private ProfileWriter $profileWriter,
+        private ProfilerActivation $activation,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!Configuration::isProfilingActive() || '0' === getenv('TYPO3_REQUEST_PROFILER')) {
+        if (ActivationMode::None === $this->activation->decide()) {
             return $handler->handle($request);
         }
 
