@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Command;
 
 use KonradMichalik\Typo3RequestProfiler\Activation\ProfilerStateService;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,17 +24,16 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[AsCommand(
+    name: 'profiler:deactivate',
+    description: 'Deactivate the temporary request profiling toggle.',
+)]
 final class ProfilerDeactivateCommand extends Command
 {
     public function __construct(
         private readonly ProfilerStateService $stateService,
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this->setDescription('Deactivate the temporary request profiling toggle.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

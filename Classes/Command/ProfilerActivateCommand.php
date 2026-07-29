@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Command;
 use InvalidArgumentException;
 use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerStateService};
 use RuntimeException;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
@@ -28,6 +29,10 @@ use function sprintf;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[AsCommand(
+    name: 'profiler:activate',
+    description: 'Temporarily activate request profiling (xdebug-style toggle).',
+)]
 final class ProfilerActivateCommand extends Command
 {
     public function __construct(
@@ -38,7 +43,6 @@ final class ProfilerActivateCommand extends Command
 
     protected function configure(): void
     {
-        $this->setDescription('Temporarily activate request profiling (xdebug-style toggle).');
         $this->addOption(
             'duration',
             null,
