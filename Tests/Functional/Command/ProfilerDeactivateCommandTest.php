@@ -17,6 +17,8 @@ use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerStateServi
 use KonradMichalik\Typo3RequestProfiler\Command\ProfilerDeactivateCommand;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Console\CommandRegistry;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 use function dirname;
@@ -30,6 +32,10 @@ final class ProfilerDeactivateCommandTest extends FunctionalTestCase
 {
     protected bool $initializeDatabase = false;
 
+    // See ProfilerActivateCommandTest: only the registration test below needs
+    // the extension activated as a package.
+    protected array $testExtensionsToLoad = ['typo3_request_profiler'];
+
     protected function tearDown(): void
     {
         $directory = dirname(ProfilerStateService::filePath());
@@ -38,6 +44,12 @@ final class ProfilerDeactivateCommandTest extends FunctionalTestCase
         @chmod($directory, 0o700);
         (new ProfilerStateService())->deactivate();
         parent::tearDown();
+    }
+
+    #[Test]
+    public function isRegisteredWithTheConsoleCommandRegistry(): void
+    {
+        self::assertTrue(GeneralUtility::makeInstance(CommandRegistry::class)->has('profiler:deactivate'));
     }
 
     #[Test]
