@@ -19,7 +19,7 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "page": { "id": 1, "type": 0 },
   "cache": { "hit": false, "cacheable": false, "disabled_reasons": ["&no_cache=1 query parameter was given"] },
   "timing": { "total_ms": 142.5 },
-  "memory": { "peak_mb": 16.1 },
+  "memory": { "peak_mb": 16.1, "limit_mb": 512, "peak_pct": 3.1 },
   "php": { "included_files": 432 },
   "queries": { "count": 101, "total_ms": 38.2 },
   "slow_queries": [
@@ -78,7 +78,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `page` | `{ id, type }` |
 | `cache` | `{ hit, cacheable, disabled_reasons[] }` |
 | `timing` | `{ total_ms }` |
-| `memory` | `{ peak_mb }` |
+| `memory` | `{ peak_mb, limit_mb, peak_pct? }` — `limit_mb` is `null` and `peak_pct` is omitted when `memory_limit` is unlimited (`-1`) |
 | `php` | `{ included_files }` |
 | `queries` | `{ count, total_ms }` |
 | `slow_queries` | `[{ sql, ms, origin? }]` |
