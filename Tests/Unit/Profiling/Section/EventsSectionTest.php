@@ -32,12 +32,9 @@ final class EventsSectionTest extends TestCase
 {
     private EventsSection $subject;
 
-    private EventCollector $collector;
-
     protected function setUp(): void
     {
         $this->subject = new EventsSection();
-        $this->collector = GeneralUtility::makeInstance(EventCollector::class);
     }
 
     protected function tearDown(): void
@@ -75,9 +72,9 @@ final class EventsSectionTest extends TestCase
     public function collectSumsCountAndTimePerEventClass(): void
     {
         for ($i = 0; $i < 100; ++$i) {
-            $this->collector->record('Core\\Cache\\Event\\Persist', 0.1);
+            $this->collector()->record('Core\\Cache\\Event\\Persist', 0.1);
         }
-        $this->collector->record('Core\\Routing\\Event\\Match', 2.0);
+        $this->collector()->record('Core\\Routing\\Event\\Match', 2.0);
 
         $result = $this->subject->collect($this->context());
 
@@ -93,9 +90,9 @@ final class EventsSectionTest extends TestCase
     #[Test]
     public function collectSortsTopByTotalTimeDescending(): void
     {
-        $this->collector->record('A', 1.0);
-        $this->collector->record('B', 5.0);
-        $this->collector->record('C', 3.0);
+        $this->collector()->record('A', 1.0);
+        $this->collector()->record('B', 5.0);
+        $this->collector()->record('C', 3.0);
 
         $result = $this->subject->collect($this->context());
 
@@ -107,7 +104,7 @@ final class EventsSectionTest extends TestCase
     public function collectCapsTopAtTwenty(): void
     {
         for ($i = 0; $i < 30; ++$i) {
-            $this->collector->record('Event'.$i, (float) $i);
+            $this->collector()->record('Event'.$i, (float) $i);
         }
 
         $result = $this->subject->collect($this->context());
@@ -121,5 +118,10 @@ final class EventsSectionTest extends TestCase
     private function context(): ProfileContext
     {
         return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);
+    }
+
+    private function collector(): EventCollector
+    {
+        return GeneralUtility::makeInstance(EventCollector::class);
     }
 }
