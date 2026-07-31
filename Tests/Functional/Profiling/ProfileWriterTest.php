@@ -109,6 +109,7 @@ final class ProfileWriterTest extends FunctionalTestCase
         self::assertJsonPath($profile, 'duplicate_queries.0.count', 2);
         self::assertJsonPath($profile, 'duplicate_queries.0.sql', 'SELECT title FROM pages WHERE uid = ?');
         self::assertJsonHasPath($profile, 'memory.peak_mb');
+        self::assertJsonHasPath($profile, 'memory.limit_mb');
         self::assertGreaterThan(0, $profile['php']['included_files']);
         self::assertJsonPath($profile, 'log.count', 2);
         self::assertJsonPath($profile, 'log.by_level', ['warning' => 2]);
