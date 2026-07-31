@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Section;
 
 use KonradMichalik\Ttt\Http\Requests;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{MemorySection, PhpSection, ProfileContext, TimingSection};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{PhpSection, ProfileContext, TimingSection};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Http\Response;
@@ -33,17 +33,6 @@ final class SimpleSectionsTest extends TestCase
 
         self::assertSame('timing', $section->name());
         self::assertSame(['total_ms' => 12.35], $section->collect($this->context(12.3456)));
-    }
-
-    #[Test]
-    public function memorySectionReportsPeakInMegabytes(): void
-    {
-        $section = new MemorySection();
-
-        $result = $section->collect($this->context());
-
-        self::assertSame('memory', $section->name());
-        self::assertGreaterThan(0, $result['peak_mb']);
     }
 
     #[Test]

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Section;
 
+use function ini_get;
+
 /**
  * MemorySection.
  *
@@ -36,10 +38,47 @@ final class MemorySection implements ProfileSection
     }
 
     /**
-     * @return array{peak_mb: float}
+     * @return array{peak_mb: float, limit_mb: float|null, peak_pct?: float}
      */
     public function collect(ProfileContext $context): array
     {
-        return ['peak_mb' => round(memory_get_peak_usage(true) / 1048576, 1)];
+        $peakBytes = memory_get_peak_usage(true);
+        $limitMb = $this->limitInMb(ini_get('memory_limit'));
+
+        $memory = [
+            'peak_mb' => round($peakBytes / 1048576, 1),
+            'limit_mb' => $limitMb,
+        ];
+
+        if (null !== $limitMb && $limitMb > 0.0) {
+            $memory['peak_pct'] = round($peakBytes / 1048576 / $limitMb * 100, 1);
+        }
+
+        return $memory;
+    }
+
+    /**
+     * Normalises PHP's shorthand memory_limit notation (e.g. "512M", "1G",
+     * "262144K", case-insensitive) to megabytes. "-1" means unlimited and has
+     * no meaningful megabyte value.
+     */
+    private function limitInMb(string $rawLimit): ?float
+    {
+        $rawLimit = trim($rawLimit);
+        if ('' === $rawLimit || '-1' === $rawLimit) {
+            return null;
+        }
+
+        $unit = strtoupper(substr($rawLimit, -1));
+        $number = (float) $rawLimit;
+
+        $bytes = match ($unit) {
+            'G' => $number * 1024 * 1024 * 1024,
+            'M' => $number * 1024 * 1024,
+            'K' => $number * 1024,
+            default => $number,
+        };
+
+        return round($bytes / 1048576, 1);
     }
 }
