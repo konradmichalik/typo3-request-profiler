@@ -32,12 +32,9 @@ final class LogSectionTest extends TestCase
 {
     private LogSection $subject;
 
-    private LogCollector $collector;
-
     protected function setUp(): void
     {
         $this->subject = new LogSection();
-        $this->collector = GeneralUtility::makeInstance(LogCollector::class);
     }
 
     #[Test]
@@ -56,10 +53,10 @@ final class LogSectionTest extends TestCase
     #[Test]
     public function collectCountsRecordsAndGroupsByLevel(): void
     {
-        $this->collector->record('warning', 'A');
-        $this->collector->record('warning', 'A');
-        $this->collector->record('error', 'B');
-        $this->collector->record('notice', 'C');
+        $this->collector()->record('warning', 'A');
+        $this->collector()->record('warning', 'A');
+        $this->collector()->record('error', 'B');
+        $this->collector()->record('notice', 'C');
 
         $result = $this->subject->collect($this->context());
 
@@ -71,9 +68,9 @@ final class LogSectionTest extends TestCase
     #[Test]
     public function collectOrdersLevelsBySeverityDescending(): void
     {
-        $this->collector->record('debug', 'A');
-        $this->collector->record('emergency', 'B');
-        $this->collector->record('warning', 'C');
+        $this->collector()->record('debug', 'A');
+        $this->collector()->record('emergency', 'B');
+        $this->collector()->record('warning', 'C');
 
         $result = $this->subject->collect($this->context());
 
@@ -84,10 +81,10 @@ final class LogSectionTest extends TestCase
     #[Test]
     public function collectReturnsTopComponentsSortedByCountDescending(): void
     {
-        $this->collector->record('warning', 'Noisy');
-        $this->collector->record('warning', 'Noisy');
-        $this->collector->record('warning', 'Noisy');
-        $this->collector->record('notice', 'Quiet');
+        $this->collector()->record('warning', 'Noisy');
+        $this->collector()->record('warning', 'Noisy');
+        $this->collector()->record('warning', 'Noisy');
+        $this->collector()->record('notice', 'Quiet');
 
         $result = $this->subject->collect($this->context());
 
@@ -105,7 +102,7 @@ final class LogSectionTest extends TestCase
     public function collectCapsTopComponentsAtTen(): void
     {
         for ($i = 0; $i < 15; ++$i) {
-            $this->collector->record('notice', 'Component'.$i);
+            $this->collector()->record('notice', 'Component'.$i);
         }
 
         $result = $this->subject->collect($this->context());
@@ -118,5 +115,10 @@ final class LogSectionTest extends TestCase
     private function context(): ProfileContext
     {
         return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);
+    }
+
+    private function collector(): LogCollector
+    {
+        return GeneralUtility::makeInstance(LogCollector::class);
     }
 }
