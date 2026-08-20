@@ -7,7 +7,7 @@
 ![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.3-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
-[![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-request-profiler?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
+[![Coverage](https://coveralls.io/repos/github/konradmichalik/typo3-request-profiler/badge.svg?branch=main)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
 [![Tests](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/tests.yml?label=tests&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE.md)
 
