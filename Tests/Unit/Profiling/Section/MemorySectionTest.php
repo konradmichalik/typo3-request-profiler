@@ -109,6 +109,16 @@ final class MemorySectionTest extends TestCase
         self::assertSame(512.0, $result['limit_mb']);
     }
 
+    #[Test]
+    public function collectParsesPlainByteValueWithoutSuffix(): void
+    {
+        ini_set('memory_limit', '134217728');
+
+        $result = $this->subject->collect($this->context());
+
+        self::assertSame(128.0, $result['limit_mb']);
+    }
+
     private function context(): ProfileContext
     {
         return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);

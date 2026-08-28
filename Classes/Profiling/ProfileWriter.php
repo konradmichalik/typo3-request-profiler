@@ -128,7 +128,7 @@ final readonly class ProfileWriter
     {
         $contents = @file_get_contents(dirname(__DIR__, 2).'/ext_emconf.php');
         if (false === $contents) {
-            return '';
+            return ''; // @codeCoverageIgnore
         }
 
         return 1 === preg_match("/'version'\s*=>\s*'([^']+)'/", $contents, $matches) ? $matches[1] : '';
