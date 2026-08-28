@@ -56,9 +56,13 @@ final class ProfilerActivateCommand extends Command
     {
         $durationOption = $input->getOption('duration');
         if (!is_string($durationOption)) {
+            // @codeCoverageIgnoreStart
+            // Unreachable via Console: the option is VALUE_REQUIRED with a string default,
+            // so getOption() always returns a string. Guard exists to satisfy static analysis.
             $output->writeln('<error>Invalid duration: expected a string value.</error>');
 
             return Command::FAILURE;
+            // @codeCoverageIgnoreEnd
         }
 
         try {
