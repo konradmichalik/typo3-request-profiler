@@ -1,2 +1,25 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 5
+			path: ../../Classes/Activation/ProfilerStateService.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Profiling/ProfileReader.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 7
+			path: ../../Classes/Profiling/ProfileWriter.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 2
+			path: ../Unit/Profiling/ProfileReaderTest.php
