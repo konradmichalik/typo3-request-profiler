@@ -115,9 +115,7 @@ final class QueryAggregator
         foreach ($queries as $query) {
             $totalMs += $query['ms'];
             $normalized = $this->normalizeSql($query['sql']);
-            if (!isset($groups[$normalized])) {
-                $groups[$normalized] = ['sql' => $normalized, 'count' => 0, 'total_ms' => 0.0, 'origin' => null];
-            }
+            $groups[$normalized] ??= ['sql' => $normalized, 'count' => 0, 'total_ms' => 0.0, 'origin' => null];
             ++$groups[$normalized]['count'];
             $groups[$normalized]['total_ms'] += $query['ms'];
             // Keep the first known call site as representative for the group.
