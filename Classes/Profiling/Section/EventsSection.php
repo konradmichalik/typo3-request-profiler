@@ -62,9 +62,7 @@ final class EventsSection implements ProfileSection
         foreach ($events as $event) {
             $totalMs += $event['ms'];
             $name = $event['event'];
-            if (!isset($groups[$name])) {
-                $groups[$name] = ['event' => $name, 'count' => 0, 'total_ms' => 0.0];
-            }
+            $groups[$name] ??= ['event' => $name, 'count' => 0, 'total_ms' => 0.0];
             ++$groups[$name]['count'];
             $groups[$name]['total_ms'] += $event['ms'];
         }
