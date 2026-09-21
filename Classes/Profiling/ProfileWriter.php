@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Profiling;
 use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ProfileContext, ProfileSection};
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use Throwable;
 use Traversable;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -61,15 +62,16 @@ final readonly class ProfileWriter
 
     public function write(
         ServerRequestInterface $request,
-        ResponseInterface $response,
+        ?ResponseInterface $response,
         string $token,
         float $totalMs,
         ActivationMode $activationMode,
+        ?Throwable $exception = null,
     ): void {
         $directory = self::defaultDirectory();
         GeneralUtility::mkdir_deep($directory);
 
-        $context = new ProfileContext($request, $response, $token, $totalMs);
+        $context = new ProfileContext($request, $response, $token, $totalMs, $exception);
 
         $profile = [
             'schemaVersion' => self::SCHEMA_VERSION,
@@ -77,9 +79,15 @@ final readonly class ProfileWriter
             'time' => date('c'),
             'method' => $request->getMethod(),
             'url' => UrlSanitizer::maskQueryValues($request->getUri()),
-            'status' => $response->getStatusCode(),
+            'status' => $response?->getStatusCode(),
             'meta' => $this->meta($activationMode),
         ];
+        if (null === $response) {
+            // A request that threw before a response existed has nothing
+            // truthful to report here; synthesising a status would misrepresent
+            // what TYPO3's own exception handler decides afterwards.
+            unset($profile['status']);
+        }
 
         foreach ($this->sortedSections() as $section) {
             if (!$section->isEnabled()) {

@@ -75,6 +75,6 @@ final class PageSectionTest extends TestCase
 
     private function context(ServerRequestInterface $request): ProfileContext
     {
-        return new ProfileContext($request, new Response(), 'tok', 1.0);
+        return new ProfileContext($request, new Response(), 'tok', 1.0, null);
     }
 }

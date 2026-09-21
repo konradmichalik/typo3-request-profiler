@@ -18,9 +18,10 @@ use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, LogCollector, QueryCollector};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowQueriesSection, TimingSection};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, ExceptionSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowQueriesSection, TimingSection};
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\QueryAggregator;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -54,6 +55,7 @@ final class ProfileWriterTest extends FunctionalTestCase
 
         $aggregator = new QueryAggregator();
         $this->subject = new ProfileWriter([
+            new ExceptionSection(),
             new PageSection(),
             new CacheSection(),
             new TimingSection(),
@@ -162,6 +164,23 @@ final class ProfileWriterTest extends FunctionalTestCase
             ['schemaVersion', 'token', 'time', 'method', 'url', 'status', 'meta', 'page', 'cache', 'timing', 'memory', 'php', 'queries', 'slow_queries', 'duplicate_queries', 'log'],
             array_keys($this->readProfile('tok_order')),
         );
+    }
+
+    #[Test]
+    public function writeOmitsStatusAndAddsExceptionSectionWhenResponseIsNull(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+        $exception = new RuntimeException('do not persist this message');
+        $line = __LINE__ - 1;
+
+        $this->subject->write($request, null, 'tok_exception', 5.0, ActivationMode::Context, $exception);
+
+        $profile = $this->readProfile('tok_exception');
+        self::assertArrayNotHasKey('status', $profile);
+        self::assertJsonPath($profile, 'exception.class', RuntimeException::class);
+        self::assertJsonPath($profile, 'exception.line', $line);
+        self::assertArrayNotHasKey('message', $profile['exception']);
     }
 
     #[Test]

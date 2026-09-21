@@ -16,7 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Middleware;
 use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerActivation, ProfilerStateService};
 use KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ProfileContext, ProfileSection, TimingSection};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ExceptionSection, ProfileContext, ProfileSection, TimingSection};
 use KonradMichalik\Typo3RequestProfiler\Tests\Functional\DevelopmentContextTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
@@ -157,6 +157,70 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writesProfileAndRethrowsWhenHandlerThrows(): void
+    {
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware(
+            $requestId,
+            new ProfileWriter([new TimingSection(), new ExceptionSection()]),
+            $this->activation(),
+        );
+
+        $this->inDevelopmentContext(function () use ($middleware): void {
+            try {
+                $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->throwingHandler());
+                self::fail('Expected exception was not thrown.');
+            } catch (RuntimeException $exception) {
+                self::assertSame('handler exploded', $exception->getMessage());
+            }
+        });
+
+        $file = Environment::getVarPath().'/log/profiles/'.$requestId.'.json';
+        self::assertFileExists($file);
+        $profile = json_decode((string) file_get_contents($file), true);
+        self::assertArrayNotHasKey('status', $profile);
+        self::assertSame(RuntimeException::class, $profile['exception']['class']);
+        self::assertArrayNotHasKey('message', $profile['exception']);
+    }
+
+    #[Test]
+    public function handlerExceptionBypassesTheMinimumDurationSampling(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_MIN_MS=600000');
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([new TimingSection()]), $this->activation());
+
+        $this->inDevelopmentContext(function () use ($middleware): void {
+            try {
+                $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->throwingHandler());
+            } catch (RuntimeException) {
+                // Expected; asserted on the artifact below.
+            }
+        });
+
+        self::assertFileExists(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
+    public function handlerExceptionPropagatesUnchangedWhenProfileWritingAlsoThrows(): void
+    {
+        $requestId = new RequestId();
+        $middleware = new PerformanceProfilerMiddleware($requestId, new ProfileWriter([$this->throwingSection()]), $this->activation());
+
+        $this->inDevelopmentContext(function () use ($middleware): void {
+            try {
+                $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->throwingHandler());
+                self::fail('Expected exception was not thrown.');
+            } catch (RuntimeException $exception) {
+                // The handler's exception must win, not the section's.
+                self::assertSame('handler exploded', $exception->getMessage());
+            }
+        });
+
+        self::assertFileDoesNotExist(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
     public function failsSafeAndReturnsResponseWhenProfileWritingThrows(): void
     {
         $requestId = new RequestId();
@@ -207,6 +271,16 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return new Response();
+            }
+        };
+    }
+
+    private function throwingHandler(): RequestHandlerInterface
+    {
+        return new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                throw new RuntimeException('handler exploded');
             }
         };
     }
