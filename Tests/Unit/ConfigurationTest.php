@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit;
 
+use Closure;
 use KonradMichalik\Ttt\Attribute\{InApplicationContext, WithEnvironment};
 use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
@@ -21,6 +22,7 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingL
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use ReflectionFunction;
 use TYPO3\CMS\Core\Log\{LogManager, Logger};
 use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
 
@@ -198,7 +200,16 @@ final class ConfigurationTest extends TestCase
         $handlers = $this->confVarsValue(['HTTP', 'handler']);
 
         self::assertArrayHasKey(Configuration::EXT_KEY.'/profiling', $handlers);
-        self::assertSame([ProfilingHttpMiddleware::class, 'wrap'], $handlers[Configuration::EXT_KEY.'/profiling']);
+        $registered = $handlers[Configuration::EXT_KEY.'/profiling'];
+
+        // A first-class callable is a fresh Closure instance each time it is
+        // created, so identity/value comparison against a second one made
+        // here would never match; reflection is the correct way to assert
+        // "this closure is ProfilingHttpMiddleware::wrap".
+        self::assertInstanceOf(Closure::class, $registered);
+        $reflection = new ReflectionFunction($registered);
+        self::assertSame('wrap', $reflection->getName());
+        self::assertSame(ProfilingHttpMiddleware::class, $reflection->getClosureScopeClass()?->getName());
     }
 
     #[Test]

@@ -123,7 +123,7 @@ class Configuration
     {
         self::setConfVarsValue(
             ['HTTP', 'handler', self::EXT_KEY.'/profiling'],
-            [ProfilingHttpMiddleware::class, 'wrap'],
+            ProfilingHttpMiddleware::wrap(...),
         );
     }
 
