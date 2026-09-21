@@ -24,6 +24,7 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 
 - Wall-clock and SQL timing, peak memory usage, included PHP file count
 - Full query count + top slow queries + N+1 duplicate detection
+- Outgoing HTTP client calls: count, total time, and the slowest requests
 - Cache hit/miss state with disabled reasons
 - Log activity per request (count by level + noisiest components)
 - Optional call-site origin (`Class::method (file:line)`) for every flagged query

@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit;
 use KonradMichalik\Ttt\Attribute\{InApplicationContext, WithEnvironment};
 use KonradMichalik\Typo3RequestProfiler\Configuration;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Http\ProfilingHttpMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
@@ -187,6 +188,34 @@ final class ConfigurationTest extends TestCase
         $writers = $this->confVarsValue(['LOG', 'writerConfiguration', LogLevel::DEBUG]);
 
         self::assertArrayHasKey(ProfilingLogWriter::class, $writers);
+    }
+
+    #[Test]
+    public function registerProfilingHttpMiddlewareRegistersTheCallableAtTheKnownKey(): void
+    {
+        Configuration::registerProfilingHttpMiddleware();
+
+        $handlers = $this->confVarsValue(['HTTP', 'handler']);
+
+        self::assertArrayHasKey(Configuration::EXT_KEY.'/profiling', $handlers);
+        self::assertSame([ProfilingHttpMiddleware::class, 'wrap'], $handlers[Configuration::EXT_KEY.'/profiling']);
+    }
+
+    #[Test]
+    public function registerProfilingHttpMiddlewarePreservesExistingHandlers(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = ArrayUtility::setValueByPath(
+            $this->backup,
+            ['HTTP', 'handler', 'vendor/existing'],
+            static fn (callable $handler): callable => $handler,
+        );
+
+        Configuration::registerProfilingHttpMiddleware();
+
+        $handlers = $this->confVarsValue(['HTTP', 'handler']);
+
+        self::assertArrayHasKey('vendor/existing', $handlers);
+        self::assertArrayHasKey(Configuration::EXT_KEY.'/profiling', $handlers);
     }
 
     #[Test]
