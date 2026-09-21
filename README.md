@@ -4,11 +4,11 @@
 
 # TYPO3 extension `typo3_request_profiler`
 
-![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.3-orange.svg)
+[![Latest Stable Version](https://typo3-badges.dev/badge/typo3_request_profiler/version/shields.svg)](https://extensions.typo3.org/extension/typo3_request_profiler)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-request-profiler/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-request-profiler)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/cgl.yml)
-[![Coverage](https://coveralls.io/repos/github/konradmichalik/typo3-request-profiler/badge.svg?branch=main)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
 [![Tests](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-request-profiler/tests.yml?label=tests&logo=github)](https://github.com/konradmichalik/typo3-request-profiler/actions/workflows/tests.yml)
+[![Coverage](https://coveralls.io/repos/github/konradmichalik/typo3-request-profiler/badge.svg?branch=main)](https://coveralls.io/github/konradmichalik/typo3-request-profiler)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE.md)
 
 </div>
@@ -16,20 +16,20 @@
 A _dev-only_ TYPO3 frontend request profiler. It instruments live frontend requests and writes one compact JSON profile per request (SQL queries, N+1 patterns, cache state, and timing) to `var/log/profiles/{request_id}.json`.
 
 > [!IMPORTANT]
-> This extension is **active by default only in a Development context** (`Environment::getContext()->isDevelopment()`). Outside Development it stays off and collects no data unless explicitly opted in; see [Activation](docs/ACTIVATION.md).
+> This extension is **active by default only in a Development context** (`Environment::getContext()->isDevelopment()`). Outside Development it stays off and collects no data unless explicitly opted in; see [Activation](docs/activation.md).
 
 The profiler is a thin, standalone collector with no external dependencies. It is inspired by the [Symfony Profiler](https://symfony.com/doc/current/profiler.html) and by some of the metrics the [TYPO3 Admin Panel](https://docs.typo3.org/c/typo3/cms-adminpanel/main/en-us/) surfaces, but records them as compact, machine-readable JSON instead of an interactive panel.
 
-**What it captures per request:**
+## ✨ Features
 
-- Wall-clock and SQL timing, peak memory usage, included PHP file count
-- Full query count + top slow queries + N+1 duplicate detection
-- Outgoing HTTP client calls: count, total time, and the slowest requests
-- Cache hit/miss state with disabled reasons
-- Log activity per request (count by level + noisiest components)
-- Optional call-site origin (`Class::method (file:line)`) for every flagged query
-- Optional PSR-14 event timing (count + the most expensive event classes)
-- Uncaught exceptions (class, file, line — never the message), even though no response was produced
+- **Timing and memory**: wall-clock and SQL timing, peak memory usage, included PHP file count
+- **Query analysis**: full query count, top slow queries, and [N+1 duplicate detection](docs/configuration.md)
+- **Outgoing HTTP client calls**: count, total time, and the slowest requests
+- **Cache state**: hit/miss with disabled reasons
+- **Log activity**: count by level and the noisiest components
+- **Optional query tracing**: call-site origin (`Class::method (file:line)`) for every flagged query, see [Configuration](docs/configuration.md)
+- **Optional PSR-14 event timing**: count and the most expensive event classes, see [Configuration](docs/configuration.md)
+- **Uncaught exceptions**: class, file, and line, never the message, even though no response was produced
 
 ## 🔥 Installation
 
@@ -55,7 +55,7 @@ composer require --dev konradmichalik/typo3-request-profiler
 
 Download the zip file from [TYPO3 extension repository (TER)](https://extensions.typo3.org/extension/typo3_request_profiler).
 
-## 💡 Example
+## 🚀 Quick start
 
 Start it up in a `Development` context (no configuration needed) and every request writes a compact JSON profile to `var/log/profiles/{request_id}.json`:
 
@@ -74,15 +74,19 @@ Start it up in a `Development` context (no configuration needed) and every reque
 }
 ```
 
-That's the gist. The full artifact also carries cache state, memory usage, PHP include count, N+1 duplicate-query detection, log activity, and optional PSR-14 event timing. See [Profile Format](docs/PROFILE-FORMAT.md) for the complete schema.
+That's the gist. The full artifact also carries cache state, memory usage, PHP include count, N+1 duplicate-query detection, log activity, and optional PSR-14 event timing. See [Profile Format](docs/profile-format.md) for the complete schema.
+
+## 🔗 Related
+
+- [`typo3-ai-mate`](https://github.com/konradmichalik/typo3-ai-mate): a `symfony/ai-mate` bridge that serves these profiles to AI coding assistants over MCP
 
 ## 📚 Documentation
 
 | Topic | What's inside |
 |-------|---------------|
-| [Activation](docs/ACTIVATION.md) | Development context, forcing it elsewhere via an env var, the `profiler:activate` CLI toggle, and the HTTP header trigger for per-request correlation |
-| [Configuration](docs/CONFIGURATION.md) | Sampling threshold, retention, query tracing, and PSR-14 event timing |
-| [Profile Format](docs/PROFILE-FORMAT.md) | The full JSON schema, provenance metadata, and the `ProfileReader` read API |
+| [Activation](docs/activation.md) | Development context, forcing it elsewhere via an env var, the `profiler:activate` CLI toggle, and the HTTP header trigger for per-request correlation |
+| [Configuration](docs/configuration.md) | Sampling threshold, retention, query tracing, and PSR-14 event timing |
+| [Profile Format](docs/profile-format.md) | The full JSON schema, provenance metadata, and the `ProfileReader` read API |
 
 ## 🧑‍💻 Contributing
 
