@@ -49,7 +49,13 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
         $headerTriggered = $this->activation->isHeaderTriggered($request);
 
         $start = microtime(true);
-        $response = $handler->handle($request);
+
+        try {
+            $response = $handler->handle($request);
+        } catch (Throwable $exception) {
+            $this->writeFailureProfileAndRethrow($request, $exception, $start, $activationMode);
+        }
+
         $totalMs = (microtime(true) - $start) * 1000;
 
         // Optional sampling: only persist requests at/above a minimum wall-clock
@@ -84,5 +90,33 @@ final readonly class PerformanceProfilerMiddleware implements MiddlewareInterfac
         }
 
         return $response;
+    }
+
+    /**
+     * A thrown request never produces a response: there is nothing to
+     * correlate a header with, and MIN_MS sampling does not apply — a
+     * failing request is always the interesting one. The write is
+     * fail-safe; the original exception always propagates unchanged.
+     */
+    private function writeFailureProfileAndRethrow(
+        ServerRequestInterface $request,
+        Throwable $exception,
+        float $start,
+        ActivationMode $activationMode,
+    ): never {
+        try {
+            $this->profileWriter->write(
+                $request,
+                null,
+                (string) $this->requestId,
+                (microtime(true) - $start) * 1000,
+                $activationMode,
+                $exception,
+            );
+        } catch (Throwable) {
+            // Fail-safe: profiling must never mask the original exception.
+        }
+
+        throw $exception;
     }
 }

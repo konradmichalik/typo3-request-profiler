@@ -65,7 +65,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `time` | string | Request time as ISO 8601 (`date('c')`). |
 | `method` | string | HTTP request method. |
 | `url` | string | Request URI with masked query values (`?q=?&page=?`): parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
-| `status` | int | HTTP response status code. |
+| `status` | int | HTTP response status code. Absent when the request threw before a response existed; see the `exception` section below. |
 | `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion`. Lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent; see [Activation](ACTIVATION.md). |
 
 > [!NOTE]
@@ -85,6 +85,10 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `duplicate_queries` | `[{ sql, count, total_ms, origin? }]` |
 | `log` | `{ count, by_level{}, top_components[{ component, count }] }` |
 | `events` | `{ count, total_ms, top[{ event, count, total_ms }] }` |
+| `exception` | `{ class, file, line, code? }` |
+
+> [!NOTE]
+> The `exception` section appears only when the request threw before a response was produced (uncaught in the frontend request handler). It never carries the exception message: messages regularly contain user input, record data, or absolute paths. The artifact's `status` field is absent in this case, and the exception still propagates to TYPO3's regular error handling unchanged; the profiler only observes it.
 
 > [!NOTE]
 > `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.
