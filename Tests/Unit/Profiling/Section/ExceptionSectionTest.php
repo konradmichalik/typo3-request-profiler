@@ -56,6 +56,7 @@ final class ExceptionSectionTest extends TestCase
 
         $result = $this->subject->collect($this->context($exception));
 
+        self::assertNotNull($result);
         self::assertSame(RuntimeException::class, $result['class']);
         self::assertSame(__FILE__, $result['file']);
         self::assertSame($line, $result['line']);
@@ -67,6 +68,7 @@ final class ExceptionSectionTest extends TestCase
     {
         $result = $this->subject->collect($this->context(new RuntimeException('x', 0)));
 
+        self::assertNotNull($result);
         self::assertArrayNotHasKey('code', $result);
     }
 
@@ -75,6 +77,8 @@ final class ExceptionSectionTest extends TestCase
     {
         $result = $this->subject->collect($this->context(new InvalidArgumentException('x', 42)));
 
+        self::assertNotNull($result);
+        self::assertArrayHasKey('code', $result);
         self::assertSame(42, $result['code']);
     }
 

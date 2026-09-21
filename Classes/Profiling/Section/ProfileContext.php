@@ -28,6 +28,6 @@ final readonly class ProfileContext
         public ?ResponseInterface $response,
         public string $token,
         public float $totalMs,
-        public ?Throwable $exception = null,
+        public ?Throwable $exception,
     ) {}
 }
