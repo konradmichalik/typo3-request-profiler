@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler;
 
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Http\ProfilingHttpMiddleware;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingLogWriter;
 use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Core\Environment;
@@ -110,6 +111,19 @@ class Configuration
         self::setConfVarsValue(
             ['LOG', 'writerConfiguration', LogLevel::DEBUG, ProfilingLogWriter::class],
             [],
+        );
+    }
+
+    /**
+     * Time outgoing HTTP client calls. The array form of HTTP.handler is the
+     * only extension point {@see \TYPO3\CMS\Core\Http\Client\GuzzleClientFactory}
+     * supports: it pushes each entry onto the Guzzle handler stack by name.
+     */
+    public static function registerProfilingHttpMiddleware(): void
+    {
+        self::setConfVarsValue(
+            ['HTTP', 'handler', self::EXT_KEY.'/profiling'],
+            ProfilingHttpMiddleware::wrap(...),
         );
     }
 

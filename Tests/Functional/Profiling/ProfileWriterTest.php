@@ -16,9 +16,9 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Profiling;
 use ArrayIterator;
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3RequestProfiler\Activation\ActivationMode;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, LogCollector, QueryCollector};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\{EventCollector, HttpCollector, LogCollector, QueryCollector};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, ExceptionSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowQueriesSection, TimingSection};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{CacheSection, DuplicateQueriesSection, EventsSection, ExceptionSection, HttpSection, LogSection, MemorySection, PageSection, PhpSection, QueriesSection, SlowHttpSection, SlowQueriesSection, TimingSection};
 use KonradMichalik\Typo3RequestProfiler\Profiling\Section\QueryAggregator;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -49,6 +49,8 @@ final class ProfileWriterTest extends FunctionalTestCase
 
     private LogCollector $logCollector;
 
+    private HttpCollector $httpCollector;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -64,14 +66,18 @@ final class ProfileWriterTest extends FunctionalTestCase
             new QueriesSection($aggregator),
             new SlowQueriesSection($aggregator),
             new DuplicateQueriesSection($aggregator),
+            new HttpSection(),
+            new SlowHttpSection(),
             new LogSection(),
             new EventsSection(),
         ]);
 
         $this->queryCollector = new QueryCollector();
         $this->logCollector = new LogCollector();
+        $this->httpCollector = new HttpCollector();
         GeneralUtility::setSingletonInstance(QueryCollector::class, $this->queryCollector);
         GeneralUtility::setSingletonInstance(LogCollector::class, $this->logCollector);
+        GeneralUtility::setSingletonInstance(HttpCollector::class, $this->httpCollector);
         GeneralUtility::setSingletonInstance(EventCollector::class, new EventCollector());
     }
 
@@ -116,6 +122,42 @@ final class ProfileWriterTest extends FunctionalTestCase
         self::assertJsonPath($profile, 'log.count', 2);
         self::assertJsonPath($profile, 'log.by_level', ['warning' => 2]);
         self::assertJsonPath($profile, 'log.top_components.0.component', 'App.Service.Foo');
+    }
+
+    #[Test]
+    public function writeAddsHttpAndSlowHttpSectionsWhenOutgoingCallsWereRecorded(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        // Query-value masking happens upstream in ProfilingHttpMiddleware, where
+        // the PSR-7 UriInterface is still available; see ProfilingHttpMiddlewareTest.
+        // The collector already holds the final, sanitised URL string here.
+        $this->httpCollector->addRequest('GET', 'https://api.example.org/fast', 5.0, 200);
+        $this->httpCollector->addRequest('GET', 'https://api.example.org/slow', 604.1, 200);
+        $this->httpCollector->addRequest('GET', 'https://api.example.org/failed', 300.0, null);
+
+        $this->subject->write($request, new Response(), 'tok_http', 1.0, ActivationMode::Context);
+
+        $profile = $this->readProfile('tok_http');
+        self::assertJsonPath($profile, 'http.count', 3);
+        self::assertJsonPath($profile, 'http.total_ms', 909.1);
+        self::assertJsonPath($profile, 'slow_http.0.url', 'https://api.example.org/slow');
+        self::assertJsonPath($profile, 'slow_http.0.status', 200);
+        self::assertArrayNotHasKey('status', $profile['slow_http'][1]);
+    }
+
+    #[Test]
+    public function writeOmitsHttpSectionsWhenNoOutgoingCallsWereRecorded(): void
+    {
+        $request = (new ServerRequest('https://example.com/', 'GET'))
+            ->withAttribute('frontend.cache.instruction', new CacheInstruction());
+
+        $this->subject->write($request, new Response(), 'tok_nohttp', 1.0, ActivationMode::Context);
+
+        $profile = $this->readProfile('tok_nohttp');
+        self::assertArrayNotHasKey('http', $profile);
+        self::assertArrayNotHasKey('slow_http', $profile);
     }
 
     #[Test]

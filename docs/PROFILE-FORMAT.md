@@ -28,6 +28,10 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
   "duplicate_queries": [
     { "sql": "SELECT COUNT(*) FROM tt_content WHERE pid = ? AND deleted = ?", "count": 100, "total_ms": 31.4 }
   ],
+  "http": { "count": 3, "total_ms": 812.4 },
+  "slow_http": [
+    { "method": "GET", "url": "https://api.example.org/v1/products?page=?", "ms": 604.1, "status": 200 }
+  ],
   "log": {
     "count": 3,
     "by_level": { "warning": 2, "notice": 1 },
@@ -83,12 +87,17 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `queries` | `{ count, total_ms }` |
 | `slow_queries` | `[{ sql, ms, origin? }]` |
 | `duplicate_queries` | `[{ sql, count, total_ms, origin? }]` |
+| `http` | `{ count, total_ms }` |
+| `slow_http` | `[{ method, url, ms, status? }]` — the 5 slowest outgoing HTTP calls, sorted by duration descending |
 | `log` | `{ count, by_level{}, top_components[{ component, count }] }` |
 | `events` | `{ count, total_ms, top[{ event, count, total_ms }] }` |
 | `exception` | `{ class, file, line, code? }` |
 
 > [!NOTE]
 > The `exception` section appears only when the request threw before a response was produced (uncaught in the frontend request handler). It never carries the exception message: messages regularly contain user input, record data, or absolute paths. The artifact's `status` field is absent in this case, and the exception still propagates to TYPO3's regular error handling unchanged; the profiler only observes it.
+
+> [!NOTE]
+> The `http`/`slow_http` sections cover outgoing calls made through TYPO3's Guzzle client factory (e.g. extensions calling external APIs). `status` is absent on a call that never received a response, such as a connect timeout. URLs go through the same query-value masking as the top-level `url` field.
 
 > [!NOTE]
 > `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.

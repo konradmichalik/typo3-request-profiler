@@ -23,3 +23,4 @@ defined('TYPO3') || exit;
 Configuration::warnIfForcedOutsideDevelopment();
 Configuration::registerProfilingDriverMiddleware();
 Configuration::registerProfilingLogWriter();
+Configuration::registerProfilingHttpMiddleware();

@@ -16,6 +16,8 @@ services:
       - '../Classes/Profiling/Instrumentation/Doctrine/*'
       # Instantiated by the logging framework outside the container.
       - '../Classes/Profiling/Instrumentation/Log/*'
+      # Called by Guzzle's HandlerStack as a plain static callable, never through the container.
+      - '../Classes/Profiling/Instrumentation/Http/*'
       # Plain request-scoped DTO, not a service.
       - '../Classes/Profiling/Section/ProfileContext.php'
       # Value-constructed read API (required $directory is not autowirable).
