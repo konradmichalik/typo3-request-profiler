@@ -58,10 +58,12 @@ final class SlowHttpSectionTest extends TestCase
 
         $result = $this->subject->collect($this->context());
 
+        self::assertNotNull($result);
         self::assertSame(
             ['https://api.example.org/slow', 'https://api.example.org/failed', 'https://api.example.org/fast'],
             array_column($result, 'url'),
         );
+        self::assertArrayHasKey('status', $result[0]);
         self::assertSame(200, $result[0]['status']);
         self::assertArrayNotHasKey('status', $result[1]);
     }
@@ -75,6 +77,7 @@ final class SlowHttpSectionTest extends TestCase
 
         $result = $this->subject->collect($this->context());
 
+        self::assertNotNull($result);
         self::assertCount(5, $result);
         self::assertSame('https://api.example.org/7', $result[0]['url']);
     }

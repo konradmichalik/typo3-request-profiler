@@ -32,13 +32,17 @@ final class ProfilingHttpMiddleware
      * HandlerStack::push() uses the array value directly and offers no
      * constructor injection, the same constraint {@see \KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Doctrine\ProfilingDriverMiddleware}
      * already works under, so the collector is resolved here rather than injected.
+     *
+     * @param callable(RequestInterface, array<array-key, mixed>): PromiseInterface $handler
+     *
+     * @return callable(RequestInterface, array<array-key, mixed>): PromiseInterface
      */
     public static function wrap(callable $handler): callable
     {
         return static function (RequestInterface $request, array $options) use ($handler): PromiseInterface {
             $start = microtime(true);
 
-            return $handler($request, $options)->then(
+            return self::callHandler($handler, $request, $options)->then(
                 static function (ResponseInterface $response) use ($request, $start): ResponseInterface {
                     self::record($request, $start, $response->getStatusCode());
 
@@ -53,6 +57,19 @@ final class ProfilingHttpMiddleware
                 },
             );
         };
+    }
+
+    /**
+     * Named, fully-typed indirection for the one call whose second argument's
+     * key/value shape can only be declared via a regular @param docblock, not
+     * on the anonymous closure {@see wrap()} returns.
+     *
+     * @param callable(RequestInterface, array<array-key, mixed>): PromiseInterface $handler
+     * @param array<array-key, mixed>                                               $options
+     */
+    private static function callHandler(callable $handler, RequestInterface $request, array $options): PromiseInterface
+    {
+        return $handler($request, $options);
     }
 
     private static function record(RequestInterface $request, float $start, ?int $status): void
