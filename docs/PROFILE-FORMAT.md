@@ -56,7 +56,7 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
 The artifact carries an explicit, versioned schema contract via the top-level
 `schemaVersion` field. It is written first so it is immediately visible in every file.
 
-**Top-level fields** (always present):
+**Top-level fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
