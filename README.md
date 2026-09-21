@@ -29,6 +29,7 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 - Log activity per request (count by level + noisiest components)
 - Optional call-site origin (`Class::method (file:line)`) for every flagged query
 - Optional PSR-14 event timing (count + the most expensive event classes)
+- Uncaught exceptions (class, file, line — never the message), even though no response was produced
 
 ## 🔥 Installation
 

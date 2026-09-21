@@ -121,6 +121,6 @@ final class MemorySectionTest extends TestCase
 
     private function context(): ProfileContext
     {
-        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0);
+        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0, null);
     }
 }

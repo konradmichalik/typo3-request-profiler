@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Section;
 
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use Throwable;
 
 /**
  * ProfileContext.
@@ -24,8 +25,9 @@ final readonly class ProfileContext
 {
     public function __construct(
         public ServerRequestInterface $request,
-        public ResponseInterface $response,
+        public ?ResponseInterface $response,
         public string $token,
         public float $totalMs,
+        public ?Throwable $exception,
     ) {}
 }

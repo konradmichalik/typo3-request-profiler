@@ -48,6 +48,6 @@ final class SimpleSectionsTest extends TestCase
 
     private function context(float $totalMs = 1.0): ProfileContext
     {
-        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', $totalMs);
+        return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', $totalMs, null);
     }
 }
