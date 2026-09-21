@@ -53,7 +53,7 @@ Each request produces one JSON file at `var/log/profiles/{request_id}.json`:
 > The `log` section only appears when the request produced log entries. Only the level and component are recorded, never the message body, so no user data leaks into the profile.
 
 > [!NOTE]
-> The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1` (see [Configuration](CONFIGURATION.md)).
+> The `events` section only appears when `TYPO3_REQUEST_PROFILER_EVENTS=1` (see [Configuration](configuration.md)).
 
 ## Profile schema
 
@@ -70,7 +70,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `method` | string | HTTP request method. |
 | `url` | string | Request URI with masked query values (`?q=?&page=?`): parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
 | `status` | int | HTTP response status code. Absent when the request threw before a response existed; see the `exception` section below. |
-| `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion`. Lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent; see [Activation](ACTIVATION.md). |
+| `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion`. Lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent; see [Activation](activation.md). |
 
 > [!NOTE]
 > Adding the `meta` block is an additive change and does not bump `schemaVersion`. Existing top-level keys are unchanged. Future additive changes (new optional fields/sections) follow the same rule; only a breaking change (renamed/removed/restructured field) bumps `schemaVersion`.
@@ -116,5 +116,5 @@ The reader is directory-based and carries no framework dependency. Its construct
 
 ## See also
 
-- [Activation](ACTIVATION.md): the four ways to turn profiling on, and what populates `meta.activationMode`
-- [Configuration](CONFIGURATION.md): sampling, retention, tracing, and event timing
+- [Activation](activation.md): the four ways to turn profiling on, and what populates `meta.activationMode`
+- [Configuration](configuration.md): sampling, retention, tracing, and event timing

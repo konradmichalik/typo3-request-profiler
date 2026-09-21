@@ -18,6 +18,7 @@ return [
         '.git',
         '.github',
         'build',
+        'docs',
         'node_modules',
         'public',
         'tests',
