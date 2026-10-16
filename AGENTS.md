@@ -23,7 +23,7 @@ Dev-only TYPO3 frontend request profiler (`konradmichalik/typo3-request-profiler
 - `docs/`: `activation.md`, `configuration.md`, `profile-format.md`
 - `Tests/Unit/`, `Tests/Functional/`: PHPUnit tests
 - `Tests/Acceptance/Fixtures/`: fixtures, including a sitepackage with a deliberate N+1 demo page
-- `Tests/CGL/`: isolated Composer project with the code style and analysis tooling
+- `Tests/CGL/`: isolated Composer project with the code style and analysis tooling. Its `composer.lock` is committed and updated by Renovate, so tool releases only reach CI through a Renovate PR
 
 ## Development commands
 
