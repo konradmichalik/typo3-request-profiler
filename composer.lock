@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "618fb7bfe8e07afa3491f6206a0dd4da",
+    "content-hash": "3dc196e27f69de7e3fef0ea0bc760447",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -122,16 +122,16 @@
         },
         {
             "name": "composer/class-map-generator",
-            "version": "1.7.3",
+            "version": "1.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/class-map-generator.git",
-                "reference": "86d8208fc3c649a3a999daf1a63c25201be2990f"
+                "reference": "5fa48e0e1992ea8a786df3ceca80625c9a643b75"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/class-map-generator/zipball/86d8208fc3c649a3a999daf1a63c25201be2990f",
-                "reference": "86d8208fc3c649a3a999daf1a63c25201be2990f",
+                "url": "https://api.github.com/repos/composer/class-map-generator/zipball/5fa48e0e1992ea8a786df3ceca80625c9a643b75",
+                "reference": "5fa48e0e1992ea8a786df3ceca80625c9a643b75",
                 "shasum": ""
             },
             "require": {
@@ -175,7 +175,7 @@
             ],
             "support": {
                 "issues": "https://github.com/composer/class-map-generator/issues",
-                "source": "https://github.com/composer/class-map-generator/tree/1.7.3"
+                "source": "https://github.com/composer/class-map-generator/tree/1.9.0"
             },
             "funding": [
                 {
@@ -187,7 +187,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-05T09:17:07+00:00"
+            "time": "2026-11-03T10:10:19+00:00",
+            "published-time": "2026-11-03T10:12:49+00:00"
         },
         {
             "name": "composer/pcre",
@@ -263,7 +264,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-07T11:47:49+00:00"
+            "time": "2026-06-07T11:47:49+00:00",
+            "published-time": "2026-06-11T12:12:37+00:00"
         },
         {
             "name": "composer/semver",
@@ -931,16 +933,16 @@
         },
         {
             "name": "guzzlehttp/promises",
-            "version": "2.5.3",
+            "version": "2.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/promises.git",
-                "reference": "cde49999552d185d64715fe9c1f77a2aadd2f9f1"
+                "reference": "3d88c829bd5f13d13847b39067dbf09a60af2154"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/promises/zipball/cde49999552d185d64715fe9c1f77a2aadd2f9f1",
-                "reference": "cde49999552d185d64715fe9c1f77a2aadd2f9f1",
+                "url": "https://api.github.com/repos/guzzle/promises/zipball/3d88c829bd5f13d13847b39067dbf09a60af2154",
+                "reference": "3d88c829bd5f13d13847b39067dbf09a60af2154",
                 "shasum": ""
             },
             "require": {
@@ -995,7 +997,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/promises/issues",
-                "source": "https://github.com/guzzle/promises/tree/2.5.3"
+                "source": "https://github.com/guzzle/promises/tree/2.6.0"
             },
             "funding": [
                 {
@@ -1011,7 +1013,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-24T09:11:28+00:00"
+            "time": "2026-10-18T12:46:59+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
@@ -2423,7 +2425,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-05T06:23:12+00:00"
+            "time": "2026-06-05T06:23:12+00:00",
+            "published-time": "2026-06-27T21:46:34+00:00"
         },
         {
             "name": "symfony/doctrine-messenger",
@@ -2870,7 +2873,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-10T19:14:10+00:00"
+            "time": "2026-09-10T19:14:10+00:00",
+            "published-time": "2026-09-15T07:11:13+00:00"
         },
         {
             "name": "symfony/http-foundation",
@@ -3796,7 +3800,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-04-10T16:19:22+00:00"
+            "time": "2026-04-10T16:19:22+00:00",
+            "published-time": "2026-04-26T14:44:45+00:00"
         },
         {
             "name": "symfony/polyfill-php83",
@@ -5640,16 +5645,16 @@
         },
         {
             "name": "konradmichalik/ttt",
-            "version": "0.4.0",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/konradmichalik/ttt.git",
-                "reference": "2b36b0ce42b7f980f0c23bc5f61a3da6e10cba8d"
+                "reference": "3a4a7a3b474f31c9ced92d5bc8e9f9503b42a0c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/konradmichalik/ttt/zipball/2b36b0ce42b7f980f0c23bc5f61a3da6e10cba8d",
-                "reference": "2b36b0ce42b7f980f0c23bc5f61a3da6e10cba8d",
+                "url": "https://api.github.com/repos/konradmichalik/ttt/zipball/3a4a7a3b474f31c9ced92d5bc8e9f9503b42a0c4",
+                "reference": "3a4a7a3b474f31c9ced92d5bc8e9f9503b42a0c4",
                 "shasum": ""
             },
             "require": {
@@ -5701,9 +5706,9 @@
             ],
             "support": {
                 "issues": "https://github.com/konradmichalik/ttt/issues",
-                "source": "https://github.com/konradmichalik/ttt/tree/0.4.0"
+                "source": "https://github.com/konradmichalik/ttt/tree/0.6.0"
             },
-            "time": "2026-07-30T09:47:20+00:00"
+            "time": "2026-09-28T09:15:46+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -9981,5 +9986,5 @@
     "platform-overrides": {
         "php": "8.2"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }

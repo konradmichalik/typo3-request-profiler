@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentati
 
 use GuzzleHttp\Promise\{Create, PromiseInterface};
 use GuzzleHttp\Psr7\{Request, Response};
+use KonradMichalik\Ttt\Attribute\WithSingleton;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\HttpCollector;
 use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Http\ProfilingHttpMiddleware;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,21 +29,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithSingleton(HttpCollector::class, HttpCollector::class)]
 final class ProfilingHttpMiddlewareTest extends TestCase
 {
-    private HttpCollector $collector;
-
-    protected function setUp(): void
-    {
-        $this->collector = new HttpCollector();
-        GeneralUtility::setSingletonInstance(HttpCollector::class, $this->collector);
-    }
-
-    protected function tearDown(): void
-    {
-        GeneralUtility::purgeInstances();
-    }
-
     #[Test]
     public function recordsASuccessfulRequestWithMaskedQueryValues(): void
     {
@@ -52,7 +41,7 @@ final class ProfilingHttpMiddlewareTest extends TestCase
 
         $handler(new Request('GET', 'https://api.example.org/v1/products?token=secret'), [])->wait();
 
-        $requests = $this->collector->getRequests();
+        $requests = $this->collector()->getRequests();
         self::assertCount(1, $requests);
         self::assertSame('GET', $requests[0]['method']);
         self::assertSame('https://api.example.org/v1/products?token=?', $requests[0]['url']);
@@ -74,8 +63,13 @@ final class ProfilingHttpMiddlewareTest extends TestCase
             self::assertSame('connect timeout', $exception->getMessage());
         }
 
-        $requests = $this->collector->getRequests();
+        $requests = $this->collector()->getRequests();
         self::assertCount(1, $requests);
         self::assertNull($requests[0]['status']);
+    }
+
+    private function collector(): HttpCollector
+    {
+        return GeneralUtility::makeInstance(HttpCollector::class);
     }
 }
