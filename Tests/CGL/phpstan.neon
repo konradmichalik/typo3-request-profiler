@@ -14,9 +14,6 @@ parameters:
 		- ../../Configuration
 		- ../../Tests/Unit
 
-	type_coverage:
-		constant: 0 # TODO: Set to 100, when PHP 8.3 is minimum requirement
-
 	ignoreErrors:
 		# Tests legitimately toggle the trace flag via the environment.
 		-
