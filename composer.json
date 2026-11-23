@@ -86,11 +86,11 @@
 			"@putenv XDEBUG_MODE=coverage",
 			"rm -rf .Build/coverage/cov",
 			"phpunit -c phpunit.xml --coverage-php=.Build/coverage/cov/unit.cov",
-			"phpunit -c FunctionalTests.xml --coverage-php=.Build/coverage/cov/functional.cov",
+			"phpunit -c phpunit.functional.xml --coverage-php=.Build/coverage/cov/functional.cov",
 			"phpcov merge --clover=.Build/coverage/clover.xml --html=.Build/coverage/html --text=php://stdout .Build/coverage/cov"
 		],
 		"test:coverage:unit": "phpunit -c phpunit.xml",
-		"test:functional": "phpunit -c FunctionalTests.xml",
+		"test:functional": "phpunit -c phpunit.functional.xml",
 		"test:unit": "phpunit -c phpunit.xml --no-coverage"
 	}
 }
