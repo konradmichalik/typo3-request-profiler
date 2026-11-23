@@ -19,7 +19,7 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Log\ProfilingL
 use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
+use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility, PathUtility};
 
 use function is_array;
 
@@ -57,6 +57,21 @@ class Configuration
         $flag = getenv($name);
 
         return false !== $flag && '' !== $flag && '0' !== $flag;
+    }
+
+    /**
+     * Budget file for profiler:check from TYPO3_REQUEST_PROFILER_BUDGETS, null
+     * when unset. A relative path is resolved against the project path, so the
+     * setting works from any working directory.
+     */
+    public static function budgetsFile(): ?string
+    {
+        $path = getenv('TYPO3_REQUEST_PROFILER_BUDGETS');
+        if (false === $path || '' === $path) {
+            return null;
+        }
+
+        return PathUtility::isAbsolutePath($path) ? $path : Environment::getProjectPath().'/'.$path;
     }
 
     /**
