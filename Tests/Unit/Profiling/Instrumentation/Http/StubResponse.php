@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Tests\Unit\Profiling\Instrumentation\Http;
 
-use Symfony\Contracts\HttpClient\{ResponseInterface};
+use Symfony\Contracts\HttpClient\ResponseInterface;
 use Throwable;
 
 use function is_int;
