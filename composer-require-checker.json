@@ -1,9 +1,0 @@
-{
-	"symbol-whitelist": [
-		"TYPO3",
-		"Symfony\\Contracts\\HttpClient\\ChunkInterface",
-		"Symfony\\Contracts\\HttpClient\\HttpClientInterface",
-		"Symfony\\Contracts\\HttpClient\\ResponseInterface",
-		"Symfony\\Contracts\\HttpClient\\ResponseStreamInterface"
-	]
-}
