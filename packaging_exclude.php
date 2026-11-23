@@ -27,6 +27,8 @@ return [
     ],
     'files' => [
         'DS_Store',
+        'AGENTS.md',
+        'CLAUDE.md',
         'CODE_OF_CONDUCT.md',
         'CODEOWNERS',
         'composer.lock',
@@ -44,6 +46,7 @@ return [
         'phpstan-baseline.neon',
         'phpstan.neon',
         'phpunit.xml',
+        'phpunit.functional.xml',
         'rector.php',
         'renovate.json',
         'SECURITY.md',
