@@ -15,13 +15,16 @@ namespace KonradMichalik\Typo3RequestProfiler\Tests\Functional\Middleware;
 
 use KonradMichalik\Typo3RequestProfiler\Activation\{Duration, ProfilerActivation, ProfilerStateService};
 use KonradMichalik\Typo3RequestProfiler\Middleware\PerformanceProfilerMiddleware;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\ProfilingEventDispatcher;
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileWriter;
-use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{ExceptionSection, ProfileContext, ProfileSection, TimingSection};
+use KonradMichalik\Typo3RequestProfiler\Profiling\Section\{EventsSection, ExceptionSection, ProfileContext, ProfileSection, TimingSection};
 use KonradMichalik\Typo3RequestProfiler\Tests\Functional\DevelopmentContextTrait;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
+use stdClass;
 use TYPO3\CMS\Core\Core\{Environment, RequestId};
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
 use TYPO3\CMS\Core\Log\LogManager;
@@ -43,6 +46,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
     {
         putenv('TYPO3_REQUEST_PROFILER');
         putenv('TYPO3_REQUEST_PROFILER_MIN_MS');
+        putenv('TYPO3_REQUEST_PROFILER_EVENTS');
         (new ProfilerStateService())->deactivate();
         parent::tearDown();
     }
@@ -95,6 +99,42 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertFileExists(Environment::getVarPath().'/log/profiles/'.$requestId.'.json');
+    }
+
+    #[Test]
+    public function stateFileActivationOutsideDevelopmentContextRecordsEventsWhenEventsFlagIsSet(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_EVENTS=1');
+        $requestId = new RequestId();
+        $stateService = new ProfilerStateService();
+        $stateService->activate(Duration::fromString('1m'));
+        $middleware = new PerformanceProfilerMiddleware(
+            $requestId,
+            new ProfileWriter([new TimingSection(), new EventsSection()]),
+            new ProfilerActivation($stateService, GeneralUtility::makeInstance(LogManager::class)),
+        );
+        // Built after the flag is set, like the decorated core dispatcher in a fresh request.
+        $dispatcher = new ProfilingEventDispatcher($this->get(EventDispatcherInterface::class));
+        $handler = new class($dispatcher) implements RequestHandlerInterface {
+            public function __construct(private readonly EventDispatcherInterface $dispatcher) {}
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->dispatcher->dispatch(new stdClass());
+
+                return new Response();
+            }
+        };
+
+        $this->inApplicationContext('Production', static function () use ($middleware, $handler): void {
+            $middleware->process(new ServerRequest('https://example.com/', 'GET'), $handler);
+        });
+
+        $file = Environment::getVarPath().'/log/profiles/'.$requestId.'.json';
+        self::assertFileExists($file);
+        $profile = json_decode((string) file_get_contents($file), true);
+        self::assertSame(1, $profile['events']['count']);
+        self::assertSame(stdClass::class, $profile['events']['top'][0]['event']);
     }
 
     #[Test]
