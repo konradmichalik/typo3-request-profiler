@@ -99,7 +99,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 > [!NOTE]
 > `truncated: true` appears in `queries` and `http` only when the collector cap of 10,000 recorded entries was exceeded, as happens in long-running processes. `count` and `total_ms` stay exact. `slow_queries`, `duplicate_queries` and `slow_http` are then derived from the first 10,000 entries only. Below the cap the key is absent.
 
-> The `http`/`slow_http` sections cover outgoing calls made through TYPO3's Guzzle client factory (e.g. extensions calling external APIs). `status` is absent on a call that never received a response, such as a connect timeout. URLs go through the same masking as the top-level `url` field (masked query values, value-only query parts and dropped userinfo). Secrets inside path segments are not masked.
+> The `http`/`slow_http` sections cover outgoing calls made through TYPO3's Guzzle client factory (e.g. extensions calling external APIs) and, when wired up as described in [Symfony HttpClient](#symfony-httpclient), calls made with Symfony HttpClient. `status` is absent on a call that never received a response, such as a connect timeout. URLs go through the same masking as the top-level `url` field (masked query values, value-only query parts and dropped userinfo). Secrets inside path segments are not masked.
 
 > [!NOTE]
 > Every `sql` string in `slow_queries` and `duplicate_queries` is normalised: comments are dropped, string, hex and numeric literals and `:dcValueN` placeholders become `?`, `IN (...)` lists collapse to `IN (?)`, and the result is capped at 1,000 characters (cut with a trailing `...`). Known limitation: double-quoted text is not masked, because it is an identifier quote on PostgreSQL and SQLite. A value written as `"max@example.org"` (MySQL without `ANSI_QUOTES`) therefore stays in clear text.
@@ -123,3 +123,24 @@ The reader is directory-based and carries no framework dependency. Its construct
 
 - [Activation](activation.md): the four ways to turn profiling on, and what populates `meta.activationMode`
 - [Configuration](configuration.md): sampling, retention, tracing, and event timing
+
+## Symfony HttpClient
+
+Extensions that use `symfony/http-client` instead of Guzzle are not seen by default. The `ProfilingHttpClient` decorator records their calls into the same `http` and `slow_http` sections. It needs `symfony/http-client-contracts`, which TYPO3 core does not require, so install it (any `symfony/http-client` pulls it in) before using the decorator. Without it the extension works as before and the decorator stays unregistered.
+
+- **Decorate a container service:** when an extension or your project registers `Symfony\Contracts\HttpClient\HttpClientInterface` as a service, it is decorated automatically and needs no configuration. Nothing happens when no such service exists.
+- **Wrap a self-built client:** for extensions that create the client themselves, wrap it:
+
+```php
+use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\HttpCollector;
+use KonradMichalik\Typo3RequestProfiler\Profiling\Instrumentation\Http\ProfilingHttpClient;
+use Symfony\Component\HttpClient\HttpClient;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+$client = new ProfilingHttpClient(
+    HttpClient::create(),
+    GeneralUtility::makeInstance(HttpCollector::class),
+);
+```
+
+Responses are lazy, so a call is recorded once its body was read (`getContent()`, `toArray()`), the response was canceled or, as the fallback, when the response object is destroyed. Reading only the status or the headers does not record it yet. `withOptions()` returns a decorated client again. Headers and bodies are never recorded, and the URL is masked as described above. A response that is still unfinished when it is destroyed reports the `total_time` reached by then.
