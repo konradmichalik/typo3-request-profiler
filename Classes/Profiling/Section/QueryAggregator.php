@@ -27,6 +27,8 @@ final class QueryAggregator
 {
     private const MAX_DUPLICATES = 20;
     private const MAX_SLOW_QUERIES = 5;
+    private const MAX_SQL_LENGTH = 1000;
+    private const ELISION_MARKER = '...';
 
     private ?QueryCollector $memoCollector = null;
 
@@ -68,22 +70,20 @@ final class QueryAggregator
     {
         $this->refreshMemo($collector);
 
-        return $this->memoStats ??= $this->aggregate($this->memoQueries);
+        return $this->memoStats ??= $this->aggregate($this->memoQueries, $collector->getOmittedCount(), $collector->getOmittedMs());
     }
 
     /**
-     * Normalise SQL for N+1 detection:
-     * 1. string + numeric literals -> ?
-     * 2. collapse whitespace
-     * 3. IN (?, ?, ...) -> IN (?)  (collapses variable-length IN lists)
+     * Normalised SQL as it is written into the profile, capped at MAX_SQL_LENGTH.
+     *
+     * The literal pattern is one tokenizing pass: it consumes string literals and
+     * quoted identifiers whole, so a comment marker or apostrophe inside them is
+     * never misread, and an apostrophe inside a comment never opens a literal.
+     * Double-quoted text is kept as is, it is an identifier on PostgreSQL and SQLite.
      */
     public function normalizeSql(string $sql): string
     {
-        $sql = (string) preg_replace("/'(?:[^'\\\\]|\\\\.)*'/", '?', $sql);
-        $sql = (string) preg_replace('/\b\d+\b/', '?', $sql);
-        $sql = (string) preg_replace('/\s+/', ' ', trim($sql));
-
-        return (string) preg_replace('/\bIN\s*\(\s*\?(?:\s*,\s*\?)*\s*\)/i', 'IN (?)', $sql);
+        return $this->capSql($this->normalizeFully($sql));
     }
 
     /**
@@ -102,20 +102,23 @@ final class QueryAggregator
     }
 
     /**
+     * $omittedCount and $omittedMs are queries dropped by the collector cap: they
+     * keep count and total exact but cannot feed the duplicate detection.
+     *
      * @param list<array{sql: string, ms: float, origin?: string|null}> $queries
      *
      * @return array{count: int, total_ms: float, duplicates: list<array{sql: string, count: int, total_ms: float, origin?: string}>}
      */
-    public function aggregate(array $queries): array
+    public function aggregate(array $queries, int $omittedCount = 0, float $omittedMs = 0.0): array
     {
-        $totalMs = 0.0;
+        $totalMs = $omittedMs;
         /** @var array<string, array{sql: string, count: int, total_ms: float, origin: string|null}> $groups */
         $groups = [];
 
         foreach ($queries as $query) {
             $totalMs += $query['ms'];
-            $normalized = $this->normalizeSql($query['sql']);
-            $groups[$normalized] ??= ['sql' => $normalized, 'count' => 0, 'total_ms' => 0.0, 'origin' => null];
+            $normalized = $this->normalizeFully($query['sql']);
+            $groups[$normalized] ??= ['sql' => $this->capSql($normalized), 'count' => 0, 'total_ms' => 0.0, 'origin' => null];
             ++$groups[$normalized]['count'];
             $groups[$normalized]['total_ms'] += $query['ms'];
             // Keep the first known call site as representative for the group.
@@ -126,7 +129,7 @@ final class QueryAggregator
         usort($duplicates, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
 
         return [
-            'count' => count($queries),
+            'count' => count($queries) + $omittedCount,
             'total_ms' => round($totalMs, 2),
             'duplicates' => array_map(
                 static function (array $group): array {
@@ -175,12 +178,41 @@ final class QueryAggregator
     }
 
     /**
+     * Grouping key for N+1 detection: uncapped, so two long statements that only
+     * differ after the cap are not merged into one group.
+     */
+    private function normalizeFully(string $sql): string
+    {
+        $sql = (string) preg_replace_callback(
+            '/(?<string>\'(?:[^\'\\\\]|\\\\.)*\')|(?<quoted>"[^"]*"|`[^`]*`)|(?<comment>--(?=\s|$)[^\n]*|\/\*.*?\*\/)|\b0x[0-9a-f]+\b|\b\d+\b|:dcValue\d+/is',
+            static fn (array $match): string => match (true) {
+                '' !== ($match['quoted'] ?? '') => $match['quoted'],
+                '' !== ($match['comment'] ?? '') => ' ',
+                default => '?',
+            },
+            $sql,
+        );
+        $sql = (string) preg_replace('/\s+/', ' ', trim($sql));
+
+        return (string) preg_replace('/\bIN\s*\(\s*\?(?:\s*,\s*\?)*\s*\)/i', 'IN (?)', $sql);
+    }
+
+    private function capSql(string $sql): string
+    {
+        if (mb_strlen($sql) <= self::MAX_SQL_LENGTH) {
+            return $sql;
+        }
+
+        return mb_substr($sql, 0, self::MAX_SQL_LENGTH - mb_strlen(self::ELISION_MARKER)).self::ELISION_MARKER;
+    }
+
+    /**
      * (Re)compute the memoized query list when the collector instance changes or
      * has collected further queries since the last call.
      */
     private function refreshMemo(QueryCollector $collector): void
     {
-        $rawCount = count($collector->getQueries());
+        $rawCount = count($collector->getQueries()) + $collector->getOmittedCount();
         if ($collector === $this->memoCollector && $rawCount === $this->memoRawCount) {
             return;
         }

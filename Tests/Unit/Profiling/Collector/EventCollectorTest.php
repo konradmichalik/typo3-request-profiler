@@ -34,19 +34,35 @@ final class EventCollectorTest extends TestCase
     #[Test]
     public function startsEmpty(): void
     {
-        self::assertSame([], $this->subject->getEvents());
+        self::assertSame([], $this->subject->getGroups());
     }
 
     #[Test]
-    public function recordStoresEventClassAndTiming(): void
+    public function recordAggregatesCountAndTimePerEventClass(): void
     {
         $this->subject->record('App\\Event\\Foo', 1.5);
+        $this->subject->record('App\\Event\\Foo', 2.0);
         $this->subject->record('App\\Event\\Bar', 2.0);
 
-        $events = $this->subject->getEvents();
+        self::assertSame(
+            [
+                'App\\Event\\Foo' => ['count' => 2, 'total_ms' => 3.5],
+                'App\\Event\\Bar' => ['count' => 1, 'total_ms' => 2.0],
+            ],
+            $this->subject->getGroups(),
+        );
+    }
 
-        self::assertCount(2, $events);
-        self::assertSame(['event' => 'App\\Event\\Foo', 'ms' => 1.5], $events[0]);
-        self::assertSame(['event' => 'App\\Event\\Bar', 'ms' => 2.0], $events[1]);
+    #[Test]
+    public function memoryStaysFlatForRepeatedRecords(): void
+    {
+        $this->subject->record('A', 1.0);
+        $before = memory_get_usage();
+        for ($i = 0; $i < 100000; ++$i) {
+            $this->subject->record('A', 1.0);
+        }
+
+        self::assertLessThan(65536, memory_get_usage() - $before);
+        self::assertSame(100001, $this->subject->getGroups()['A']['count']);
     }
 }

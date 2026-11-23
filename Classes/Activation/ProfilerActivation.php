@@ -16,23 +16,30 @@ namespace KonradMichalik\Typo3RequestProfiler\Activation;
 use KonradMichalik\Typo3RequestProfiler\Configuration;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Log\LogManager;
 
 use function getenv;
 use function hash_equals;
+use function sprintf;
+use function strlen;
 
 /**
  * ProfilerActivation.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
-final readonly class ProfilerActivation
+final class ProfilerActivation
 {
     private const HEADER_NAME = 'Typo3-Profiler';
 
     private const SECRET_ENV_VAR = 'TYPO3_REQUEST_PROFILER_SECRET';
 
+    private const MIN_SECRET_LENGTH = 32;
+
+    private bool $weakSecretWarned = false;
+
     public function __construct(
-        private ProfilerStateService $stateService,
+        private readonly ProfilerStateService $stateService, private readonly LogManager $logManager,
     ) {}
 
     public function decide(ServerRequestInterface $request): ActivationMode
@@ -88,6 +95,30 @@ final readonly class ProfilerActivation
             return false;
         }
 
+        // A short secret can be guessed online (no rate limit), so it counts as unset.
+        if (strlen($secret) < self::MIN_SECRET_LENGTH) {
+            $this->warnAboutWeakSecret();
+
+            return false;
+        }
+
         return hash_equals($secret, $header);
+    }
+
+    private function warnAboutWeakSecret(): void
+    {
+        if ($this->weakSecretWarned) {
+            return;
+        }
+        $this->weakSecretWarned = true;
+
+        $this->logManager
+            ->getLogger(self::class)
+            ->warning(sprintf(
+                '%s is shorter than %d characters and is ignored, the header trigger stays disabled. '
+                .'Use a longer random value, e.g. "openssl rand -hex 32".',
+                self::SECRET_ENV_VAR,
+                self::MIN_SECRET_LENGTH,
+            ));
     }
 }

@@ -68,7 +68,7 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `token` | string | Request identifier; also the file name. |
 | `time` | string | Request time as ISO 8601 (`date('c')`). |
 | `method` | string | HTTP request method. |
-| `url` | string | Request URI with masked query values (`?q=?&page=?`): parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). |
+| `url` | string | Request URI with masked query values (`?q=?&page=?`): parameter names are kept, values are never persisted (they regularly carry search terms, e-mail addresses or one-time tokens). Query parts without `=` are masked as `?`, and userinfo (`user:password@`) is dropped. |
 | `status` | int | HTTP response status code. Absent when the request threw before a response existed; see the `exception` section below. |
 | `meta` | object | Provenance: `activationMode` (`context`/`stateFile`/`header`), `applicationContext`, `typo3Version`, `extensionVersion`. Lets a consumer tell "page-cache hit" apart from "wrong mode/context" without guessing. Note `activationMode` reflects why profiling was active, not whether the HTTP header trigger's correlation header was also sent; see [Activation](activation.md). |
 
@@ -84,20 +84,25 @@ The artifact carries an explicit, versioned schema contract via the top-level
 | `timing` | `{ total_ms }` |
 | `memory` | `{ peak_mb, limit_mb, peak_pct? }` — `limit_mb` is `null` and `peak_pct` is omitted when `memory_limit` is unlimited (`-1`) |
 | `php` | `{ included_files }` |
-| `queries` | `{ count, total_ms }` |
+| `queries` | `{ count, total_ms, truncated? }` |
 | `slow_queries` | `[{ sql, ms, origin? }]` |
 | `duplicate_queries` | `[{ sql, count, total_ms, origin? }]` |
-| `http` | `{ count, total_ms }` |
+| `http` | `{ count, total_ms, truncated? }` |
 | `slow_http` | `[{ method, url, ms, status? }]` — the 5 slowest outgoing HTTP calls, sorted by duration descending |
 | `log` | `{ count, by_level{}, top_components[{ component, count }] }` |
 | `events` | `{ count, total_ms, top[{ event, count, total_ms }] }` |
 | `exception` | `{ class, file, line, code? }` |
 
 > [!NOTE]
-> The `exception` section appears only when the request threw before a response was produced (uncaught in the frontend request handler). It never carries the exception message: messages regularly contain user input, record data, or absolute paths. The artifact's `status` field is absent in this case, and the exception still propagates to TYPO3's regular error handling unchanged; the profiler only observes it.
+> The `exception` section's `file` is relative to the TYPO3 project path, or just the file name when the file lies outside the project, so no absolute path is persisted. The `exception` section appears only when the request threw before a response was produced (uncaught in the frontend request handler). It never carries the exception message: messages regularly contain user input, record data, or absolute paths. The artifact's `status` field is absent in this case, and the exception still propagates to TYPO3's regular error handling unchanged; the profiler only observes it.
 
 > [!NOTE]
-> The `http`/`slow_http` sections cover outgoing calls made through TYPO3's Guzzle client factory (e.g. extensions calling external APIs). `status` is absent on a call that never received a response, such as a connect timeout. URLs go through the same query-value masking as the top-level `url` field.
+> `truncated: true` appears in `queries` and `http` only when the collector cap of 10,000 recorded entries was exceeded, as happens in long-running processes. `count` and `total_ms` stay exact. `slow_queries`, `duplicate_queries` and `slow_http` are then derived from the first 10,000 entries only. Below the cap the key is absent.
+
+> The `http`/`slow_http` sections cover outgoing calls made through TYPO3's Guzzle client factory (e.g. extensions calling external APIs). `status` is absent on a call that never received a response, such as a connect timeout. URLs go through the same masking as the top-level `url` field (masked query values, value-only query parts and dropped userinfo). Secrets inside path segments are not masked.
+
+> [!NOTE]
+> Every `sql` string in `slow_queries` and `duplicate_queries` is normalised: comments are dropped, string, hex and numeric literals and `:dcValueN` placeholders become `?`, `IN (...)` lists collapse to `IN (?)`, and the result is capped at 1,000 characters (cut with a trailing `...`). Known limitation: double-quoted text is not masked, because it is an identifier quote on PostgreSQL and SQLite. A value written as `"max@example.org"` (MySQL without `ANSI_QUOTES`) therefore stays in clear text.
 
 > [!NOTE]
 > `schemaVersion` is incremented only when field names or shapes change in a breaking way. Additive changes keep the same version.

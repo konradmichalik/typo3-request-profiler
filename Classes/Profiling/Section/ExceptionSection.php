@@ -13,6 +13,14 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3RequestProfiler\Profiling\Section;
 
+use TYPO3\CMS\Core\Core\Environment;
+
+use function basename;
+use function rtrim;
+use function str_starts_with;
+use function strlen;
+use function substr;
+
 /**
  * ExceptionSection.
  *
@@ -51,7 +59,7 @@ final class ExceptionSection implements ProfileSection
 
         $payload = [
             'class' => $exception::class,
-            'file' => $exception->getFile(),
+            'file' => $this->relativeFile($exception->getFile()),
             'line' => $exception->getLine(),
         ];
 
@@ -61,5 +69,16 @@ final class ExceptionSection implements ProfileSection
         }
 
         return $payload;
+    }
+
+    /**
+     * The trailing separator in the prefix check keeps `/var/www/app-other`
+     * from matching the project path `/var/www/app`.
+     */
+    private function relativeFile(string $file): string
+    {
+        $prefix = rtrim(Environment::getProjectPath(), '/').'/';
+
+        return str_starts_with($file, $prefix) ? substr($file, strlen($prefix)) : basename($file);
     }
 }

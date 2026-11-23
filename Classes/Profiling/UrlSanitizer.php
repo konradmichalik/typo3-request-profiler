@@ -28,20 +28,24 @@ final class UrlSanitizer
      * Mask query parameter values while keeping the parameter names, so the
      * profiled URL stays diagnostic (which parameters were involved) without
      * persisting user data — query values regularly carry search terms,
-     * e-mail addresses or one-time tokens.
+     * e-mail addresses or one-time tokens. Userinfo (Basic Auth credentials)
+     * is dropped, and query parts without "=" are masked entirely because
+     * they can only be a value (e.g. a JWT passed as the whole query string).
      */
     public static function maskQueryValues(UriInterface $uri): string
     {
-        $url = (string) $uri;
+        $url = (string) $uri->withUserInfo('');
         $query = $uri->getQuery();
         if ('' === $query) {
             return $url;
         }
 
         $masked = implode('&', array_map(
-            static fn (string $pair): string => str_contains($pair, '=')
-                ? strstr($pair, '=', true).'=?'
-                : $pair,
+            static fn (string $pair): string => match (true) {
+                '' === $pair => '',
+                str_contains($pair, '=') => strstr($pair, '=', true).'=?',
+                default => '?',
+            },
             explode('&', $query),
         ));
 

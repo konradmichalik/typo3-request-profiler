@@ -52,7 +52,7 @@ curl -H "Typo3-Profiler: $TYPO3_REQUEST_PROFILER_SECRET" https://staging.example
 
 | Variable | Default | Effect |
 |----------|---------|--------|
-| `TYPO3_REQUEST_PROFILER_SECRET` | (unset) | Shared secret for the `Typo3-Profiler` header outside Development. Provision via environment variable, never persisted extension configuration. |
+| `TYPO3_REQUEST_PROFILER_SECRET` | (unset) | Shared secret for the `Typo3-Profiler` header outside Development, at least 32 characters. Provision via environment variable, never persisted extension configuration. |
 
 A valid trigger adds a response header with the artifact's identity, and marks the response `Cache-Control: no-store` so the header never ends up in a CDN/Varnish cache:
 
@@ -63,7 +63,7 @@ Typo3-Profiler-Artifact: <token>
 Resolve `<token>.json` under `var/log/profiles/` (or via the CLI/MCP tooling) to get the artifact. The trigger works independently of whatever already made this request profiled (Development context, the state-file toggle). Even if profiling was already active, sending the header still gets you the correlation header and bypasses `TYPO3_REQUEST_PROFILER_MIN_MS` sampling for that one request.
 
 > [!IMPORTANT]
-> Outside Development, the trigger is **hard-disabled** unless `TYPO3_REQUEST_PROFILER_SECRET` is configured (minimum 32 random bytes recommended, e.g. `openssl rand -hex 32`). An invalid or missing token is indistinguishable from not sending the header at all: no error, no hint, no response change. This means the endpoint can't be used to probe whether the feature or a valid token exists. Accept the trigger only over TLS in that case; behind a reverse proxy this depends on correct `reverseProxySSL`/trusted-proxy configuration.
+> Outside Development, the trigger is **hard-disabled** unless `TYPO3_REQUEST_PROFILER_SECRET` is configured with at least 32 characters (e.g. `openssl rand -hex 32`). A shorter secret counts as not configured and logs one warning per process, without the value. An invalid or missing token is indistinguishable from not sending the header at all: no error, no hint, no response change. This means the endpoint can't be used to probe whether the feature or a valid token exists. Accept the trigger only over TLS in that case; behind a reverse proxy this depends on correct `reverseProxySSL`/trusted-proxy configuration.
 
 > [!NOTE]
 > A profile of a full page-cache hit is nearly empty. This is expected, not a bug; use the [`meta.activationMode`](profile-format.md) field together with the section keys present to tell that apart from "wrong mode/context". Bypassing the cache would change the very behavior being profiled, so profile a deliberately warmed or cleared cache instead of relying on `no_cache` (discouraged in modern TYPO3 anyway).

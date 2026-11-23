@@ -57,9 +57,34 @@ final class UrlSanitizerTest extends TestCase
             'https://example.com/?tx_felogin_login%5Bhash%5D=?&tx_felogin_login%5Baction%5D=?',
         ];
 
-        yield 'valueless parameter is kept as-is' => [
+        yield 'value-only query string is masked' => [
+            'https://example.org/?eyJhbGciOiJIUzI1NiJ9.payload.sig',
+            'https://example.org/??',
+        ];
+
+        yield 'valueless parameter is masked' => [
             'https://example.com/?debug',
-            'https://example.com/?debug',
+            'https://example.com/??',
+        ];
+
+        yield 'mixed pairs and value-only parts' => [
+            'https://example.com/?a=1&flag&b=2',
+            'https://example.com/?a=?&?&b=?',
+        ];
+
+        yield 'empty query parts stay empty' => [
+            'https://example.com/?a=1&&b=2',
+            'https://example.com/?a=?&&b=?',
+        ];
+
+        yield 'userinfo is dropped' => [
+            'https://apiuser:s3cr3t@api.example.org/v1/items?page=2',
+            'https://api.example.org/v1/items?page=?',
+        ];
+
+        yield 'userinfo is dropped without query' => [
+            'https://apiuser:s3cr3t@api.example.org/v1/items',
+            'https://api.example.org/v1/items',
         ];
 
         yield 'empty value is masked' => [

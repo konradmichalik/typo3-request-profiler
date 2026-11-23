@@ -37,9 +37,9 @@ final class ProfilingLogWriterTest extends TestCase
 
         $writer->writeLog(new LogRecord('App.Service.Foo', LogLevel::WARNING, 'something happened'));
 
-        $records = GeneralUtility::makeInstance(LogCollector::class)->getRecords();
+        $records = GeneralUtility::makeInstance(LogCollector::class)->getCounts();
 
-        self::assertSame([['level' => LogLevel::WARNING, 'component' => 'App.Service.Foo']], $records);
+        self::assertSame([LogLevel::WARNING => ['App.Service.Foo' => 1]], $records);
     }
 
     #[Test]

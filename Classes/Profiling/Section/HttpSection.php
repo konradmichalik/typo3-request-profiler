@@ -41,20 +41,24 @@ final class HttpSection implements ProfileSection
     }
 
     /**
-     * @return array{count: int, total_ms: float}|null
+     * @return array{count: int, total_ms: float, truncated?: true}|null
      */
     public function collect(ProfileContext $context): ?array
     {
-        $requests = GeneralUtility::makeInstance(HttpCollector::class)->getRequests();
+        $collector = GeneralUtility::makeInstance(HttpCollector::class);
+        $requests = $collector->getRequests();
+
         if ([] === $requests) {
             return null;
         }
 
-        $totalMs = 0.0;
+        $totalMs = $collector->getOmittedMs();
         foreach ($requests as $request) {
             $totalMs += $request['ms'];
         }
 
-        return ['count' => count($requests), 'total_ms' => round($totalMs, 2)];
+        $stats = ['count' => count($requests) + $collector->getOmittedCount(), 'total_ms' => round($totalMs, 2)];
+
+        return $collector->isTruncated() ? [...$stats, 'truncated' => true] : $stats;
     }
 }

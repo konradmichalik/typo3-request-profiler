@@ -63,9 +63,7 @@ final class ProfilingEventDispatcherTest extends FunctionalTestCase
             self::assertSame($event, $result);
         });
 
-        $events = $this->collector->getEvents();
-        self::assertCount(1, $events);
-        self::assertSame(stdClass::class, $events[0]['event']);
+        self::assertSame(1, $this->collector->getGroups()[stdClass::class]['count']);
     }
 
     #[Test]
@@ -81,26 +79,11 @@ final class ProfilingEventDispatcherTest extends FunctionalTestCase
             self::assertSame($event, $result);
         });
 
-        self::assertSame([], $this->collector->getEvents());
+        self::assertSame([], $this->collector->getGroups());
     }
 
     #[Test]
-    public function recordsOutsideDevelopmentWhenForceEnabled(): void
-    {
-        putenv('TYPO3_REQUEST_PROFILER_EVENTS=1');
-        putenv('TYPO3_REQUEST_PROFILER_FORCE=1');
-        $event = new stdClass();
-        $inner = $this->innerReturning($event);
-
-        $this->inApplicationContext('Production', static function () use ($inner, $event): void {
-            (new ProfilingEventDispatcher($inner))->dispatch($event);
-        });
-
-        self::assertCount(1, $this->collector->getEvents());
-    }
-
-    #[Test]
-    public function passesThroughOutsideDevelopmentWithoutForce(): void
+    public function recordsOutsideDevelopmentWithEventsFlagAlone(): void
     {
         putenv('TYPO3_REQUEST_PROFILER_EVENTS=1');
         putenv('TYPO3_REQUEST_PROFILER_FORCE');
@@ -111,7 +94,7 @@ final class ProfilingEventDispatcherTest extends FunctionalTestCase
             (new ProfilingEventDispatcher($inner))->dispatch($event);
         });
 
-        self::assertSame([], $this->collector->getEvents());
+        self::assertSame(1, $this->collector->getGroups()[stdClass::class]['count']);
     }
 
     private function innerReturning(object $event): EventDispatcherInterface

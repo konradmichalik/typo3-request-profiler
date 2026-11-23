@@ -58,4 +58,29 @@ final class QueryCollectorTest extends TestCase
 
         self::assertTrue($this->subject->isPageGenerated());
     }
+
+    #[Test]
+    public function aboveTheCapOnlyCountAndTotalTimeAreKept(): void
+    {
+        $cap = QueryCollector::MAX_ENTRIES;
+        for ($i = 0; $i < $cap + 5; ++$i) {
+            $this->subject->addQuery('SELECT '.$i, 2.0);
+        }
+
+        self::assertCount($cap, $this->subject->getQueries());
+        self::assertTrue($this->subject->isTruncated());
+        self::assertSame(5, $this->subject->getOmittedCount());
+        self::assertEqualsWithDelta(10.0, $this->subject->getOmittedMs(), 0.001);
+    }
+
+    #[Test]
+    public function isNotTruncatedAtExactlyTheCap(): void
+    {
+        for ($i = 0; $i < QueryCollector::MAX_ENTRIES; ++$i) {
+            $this->subject->addQuery('SELECT 1', 1.0);
+        }
+
+        self::assertFalse($this->subject->isTruncated());
+        self::assertSame(0, $this->subject->getOmittedCount());
+    }
 }

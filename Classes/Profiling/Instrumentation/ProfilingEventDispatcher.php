@@ -33,10 +33,10 @@ final readonly class ProfilingEventDispatcher implements EventDispatcherInterfac
     public function __construct(
         private EventDispatcherInterface $inner,
     ) {
-        // Follow the same activation gate as the rest of the profiler
-        // (Development, or Force outside it) so events are captured wherever
-        // profiling is active — including staging with _FORCE=1.
-        $this->enabled = Configuration::isProfilingActive() && Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_EVENTS');
+        // Opt-in flag only: activation (state file, header) is decided per
+        // request in the middleware, after the first events have already been
+        // dispatched, so it cannot gate the constructor.
+        $this->enabled = Configuration::isEnvFlagEnabled('TYPO3_REQUEST_PROFILER_EVENTS');
         // Shared via makeInstance (like QueryCollector) so the writer reads the
         // very same request-scoped instance this dispatcher records into.
         $this->collector = GeneralUtility::makeInstance(EventCollector::class);

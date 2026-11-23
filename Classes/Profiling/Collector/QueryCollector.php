@@ -15,6 +15,8 @@ namespace KonradMichalik\Typo3RequestProfiler\Profiling\Collector;
 
 use TYPO3\CMS\Core\SingletonInterface;
 
+use function count;
+
 /**
  * QueryCollector.
  *
@@ -23,14 +25,30 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class QueryCollector implements SingletonInterface
 {
     /**
+     * Long-running processes (CLI imports, workers) never reach the writer, so
+     * the collector must not grow unbounded. Beyond the cap only count and time
+     * are kept.
+     */
+    public const MAX_ENTRIES = 10000;
+
+    /**
      * @var list<array{sql: string, ms: float, origin: string|null}>
      */
     private array $queries = [];
 
+    private int $omittedCount = 0;
+    private float $omittedMs = 0.0;
     private bool $pageGenerated = false;
 
     public function addQuery(string $sql, float $ms, ?string $origin = null): void
     {
+        if (count($this->queries) >= self::MAX_ENTRIES) {
+            ++$this->omittedCount;
+            $this->omittedMs += $ms;
+
+            return;
+        }
+
         $this->queries[] = ['sql' => $sql, 'ms' => $ms, 'origin' => $origin];
     }
 
@@ -40,6 +58,21 @@ final class QueryCollector implements SingletonInterface
     public function getQueries(): array
     {
         return $this->queries;
+    }
+
+    public function getOmittedCount(): int
+    {
+        return $this->omittedCount;
+    }
+
+    public function getOmittedMs(): float
+    {
+        return $this->omittedMs;
+    }
+
+    public function isTruncated(): bool
+    {
+        return $this->omittedCount > 0;
     }
 
     public function markPageGenerated(): void
