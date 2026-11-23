@@ -23,6 +23,7 @@ use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use ReflectionFunction;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Log\{LogManager, Logger};
 use TYPO3\CMS\Core\Utility\{ArrayUtility, GeneralUtility};
 
@@ -53,6 +54,7 @@ final class ConfigurationTest extends TestCase
         $GLOBALS['TYPO3_CONF_VARS'] = $this->backup;
         putenv('TYPO3_REQUEST_PROFILER_FORCE');
         putenv('TYPO3_REQUEST_PROFILER_TEST_FLAG');
+        putenv('TYPO3_REQUEST_PROFILER_BUDGETS');
         GeneralUtility::purgeInstances();
     }
 
@@ -79,6 +81,32 @@ final class ConfigurationTest extends TestCase
         yield 'empty' => ['', false];
         yield 'one' => ['1', true];
         yield 'truthy' => ['yes', true];
+    }
+
+    #[Test]
+    public function budgetsFileIsNullWhenTheVariableIsUnsetOrEmpty(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_BUDGETS');
+        self::assertNull(Configuration::budgetsFile());
+
+        putenv('TYPO3_REQUEST_PROFILER_BUDGETS=');
+        self::assertNull(Configuration::budgetsFile());
+    }
+
+    #[Test]
+    public function budgetsFileKeepsAnAbsolutePath(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_BUDGETS=/etc/ci/budgets.json');
+
+        self::assertSame('/etc/ci/budgets.json', Configuration::budgetsFile());
+    }
+
+    #[Test]
+    public function budgetsFileResolvesARelativePathAgainstTheProjectPath(): void
+    {
+        putenv('TYPO3_REQUEST_PROFILER_BUDGETS=config/profiler-budgets.json');
+
+        self::assertSame(Environment::getProjectPath().'/config/profiler-budgets.json', Configuration::budgetsFile());
     }
 
     #[Test]

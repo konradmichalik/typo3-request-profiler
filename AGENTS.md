@@ -16,11 +16,12 @@ Dev-only TYPO3 frontend request profiler (`konradmichalik/typo3-request-profiler
 - `Classes/Activation/`: activation mode and state handling
 - `Classes/Command/`: activate and deactivate console commands
 - `Classes/Middleware/PerformanceProfilerMiddleware.php`: frontend middleware entry point
-- `Classes/Profiling/`: profile reader and writer, URL sanitizing
+- `Classes/Profiling/`: profile reader and writer, URL sanitizing, `ProfileResolver` (token or file path to profile)
+- `Classes/Profiling/Budget/`: budget file loader and evaluator behind `profiler:check`
 - `Classes/Profiling/Collector/`, `Instrumentation/` (Doctrine, Http, Log), `Section/`: data collection and profile sections
 - `Classes/Configuration.php`: extension configuration
 - `Configuration/`: TYPO3 configuration
-- `docs/`: `activation.md`, `configuration.md`, `profile-format.md`
+- `docs/`: `activation.md`, `configuration.md`, `profile-format.md`, `compare.md`, `budgets.md`
 - `Tests/Unit/`, `Tests/Functional/`: PHPUnit tests
 - `Tests/Acceptance/Fixtures/`: fixtures, including a sitepackage with a deliberate N+1 demo page
 - `Tests/CGL/`: isolated Composer project with the code style and analysis tooling. Its `composer.lock` is committed and updated by Renovate, so tool releases only reach CI through a Renovate PR

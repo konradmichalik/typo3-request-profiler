@@ -24,7 +24,7 @@ The profiler is a thin, standalone collector with no external dependencies. It i
 
 - **Timing and memory**: wall-clock and SQL timing, peak memory usage, included PHP file count
 - **Query analysis**: full query count, top slow queries, and [N+1 duplicate detection](docs/configuration.md)
-- **Outgoing HTTP client calls**: count, total time, and the slowest requests
+- **Outgoing HTTP client calls**: count, total time, and the slowest requests, for Guzzle and [Symfony HttpClient](docs/profile-format.md#symfony-httpclient)
 - **Cache state**: hit/miss with disabled reasons
 - **Log activity**: count by level and the noisiest components
 - **Optional query tracing**: call-site origin (`Class::method (file:line)`) for every flagged query, see [Configuration](docs/configuration.md)
@@ -87,6 +87,8 @@ That's the gist. The full artifact also carries cache state, memory usage, PHP i
 | [Activation](docs/activation.md) | Development context, forcing it elsewhere via an env var, the `profiler:activate` CLI toggle, and the HTTP header trigger for per-request correlation |
 | [Configuration](docs/configuration.md) | Sampling threshold, retention, query tracing, and PSR-14 event timing |
 | [Profile Format](docs/profile-format.md) | The full JSON schema, provenance metadata, and the `ProfileReader` read API |
+| [Compare](docs/compare.md) | `profiler:compare`: diff two profiles, with text and JSON output |
+| [Budgets](docs/budgets.md) | `profiler:check`: check profiles against performance budgets and fail CI on violations, with a Playwright example |
 
 ## 🧑‍💻 Contributing
 
