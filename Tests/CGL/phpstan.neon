@@ -23,4 +23,5 @@ parameters:
 				- ../../Tests/Unit/ConfigurationTest.php
 				- ../../Tests/Unit/Profiling/Instrumentation/Doctrine/QueryOriginTest.php
 				- ../../Tests/Unit/Profiling/Instrumentation/Doctrine/ProfilingConnectionTest.php
+				- ../../Tests/Unit/Profiling/Instrumentation/ProfilingEventDispatcherTest.php
 				- ../../Tests/Unit/Profiling/Section/EventsSectionTest.php

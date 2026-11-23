@@ -60,6 +60,27 @@ final class HttpSectionTest extends TestCase
         self::assertSame(['count' => 2, 'total_ms' => 15.5], $result);
     }
 
+    #[Test]
+    public function collectOmitsTruncatedFlagBelowTheCap(): void
+    {
+        $this->collector()->addRequest('GET', 'https://api.example.org/', 1.0, 200);
+
+        self::assertArrayNotHasKey('truncated', $this->subject->collect($this->context()) ?? []);
+    }
+
+    #[Test]
+    public function collectKeepsCountAndTotalExactBeyondTheCapAndFlagsTruncation(): void
+    {
+        $total = HttpCollector::MAX_ENTRIES + 7;
+        for ($i = 0; $i < $total; ++$i) {
+            $this->collector()->addRequest('GET', 'https://api.example.org/', 0.5, 200);
+        }
+
+        $result = $this->subject->collect($this->context());
+
+        self::assertSame(['count' => $total, 'total_ms' => round($total * 0.5, 2), 'truncated' => true], $result);
+    }
+
     private function context(): ProfileContext
     {
         return new ProfileContext(Requests::get('https://example.com/')->build(), new Response(), 'tok', 1.0, null);

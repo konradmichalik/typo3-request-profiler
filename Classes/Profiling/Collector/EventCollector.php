@@ -23,20 +23,22 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class EventCollector implements SingletonInterface
 {
     /**
-     * @var list<array{event: string, ms: float}>
+     * @var array<string, array{count: int, total_ms: float}>
      */
-    private array $events = [];
+    private array $groups = [];
 
     public function record(string $eventClass, float $ms): void
     {
-        $this->events[] = ['event' => $eventClass, 'ms' => $ms];
+        $this->groups[$eventClass] ??= ['count' => 0, 'total_ms' => 0.0];
+        ++$this->groups[$eventClass]['count'];
+        $this->groups[$eventClass]['total_ms'] += $ms;
     }
 
     /**
-     * @return list<array{event: string, ms: float}>
+     * @return array<string, array{count: int, total_ms: float}> keyed by event class
      */
-    public function getEvents(): array
+    public function getGroups(): array
     {
-        return $this->events;
+        return $this->groups;
     }
 }

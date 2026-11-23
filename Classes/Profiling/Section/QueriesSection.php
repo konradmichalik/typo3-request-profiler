@@ -43,12 +43,14 @@ final readonly class QueriesSection implements ProfileSection
     }
 
     /**
-     * @return array{count: int, total_ms: float}
+     * @return array{count: int, total_ms: float, truncated?: true}
      */
     public function collect(ProfileContext $context): array
     {
-        $stats = $this->aggregator->statsFor(GeneralUtility::makeInstance(QueryCollector::class));
+        $collector = GeneralUtility::makeInstance(QueryCollector::class);
+        $stats = $this->aggregator->statsFor($collector);
+        $section = ['count' => $stats['count'], 'total_ms' => $stats['total_ms']];
 
-        return ['count' => $stats['count'], 'total_ms' => $stats['total_ms']];
+        return $collector->isTruncated() ? [...$section, 'truncated' => true] : $section;
     }
 }

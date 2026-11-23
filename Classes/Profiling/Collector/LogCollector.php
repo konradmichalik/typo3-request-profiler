@@ -23,20 +23,20 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class LogCollector implements SingletonInterface
 {
     /**
-     * @var list<array{level: string, component: string}>
+     * @var array<string, array<string, int>>
      */
-    private array $records = [];
+    private array $counts = [];
 
     public function record(string $level, string $component): void
     {
-        $this->records[] = ['level' => $level, 'component' => $component];
+        $this->counts[$level][$component] = ($this->counts[$level][$component] ?? 0) + 1;
     }
 
     /**
-     * @return list<array{level: string, component: string}>
+     * @return array<string, array<string, int>> count per level and component
      */
-    public function getRecords(): array
+    public function getCounts(): array
     {
-        return $this->records;
+        return $this->counts;
     }
 }

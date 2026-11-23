@@ -14,7 +14,7 @@ The profiler is controlled entirely via environment variables. For the variables
 > `TYPO3_REQUEST_PROFILER_TRACE=1` uses `debug_backtrace` per query and is therefore opt-in for performance. No bound parameter values are ever captured, only the call site.
 
 > [!TIP]
-> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. Event timing follows the same activation gate as the rest of the profiler, so it also works on staging together with `TYPO3_REQUEST_PROFILER_FORCE=1` (see [Activation](activation.md)).
+> `TYPO3_REQUEST_PROFILER_EVENTS=1` wraps the core PSR-14 dispatcher and measures every dispatched event. Dispatch happens very frequently, so the per-event timing is opt-in. When off, events are dispatched without any measurement and the `events` section is omitted. The flag is the only gate for the timing itself, so it also works outside Development with the temporary toggle, the header trigger or `TYPO3_REQUEST_PROFILER_FORCE=1` (see [Activation](activation.md)). Activation is decided per request in the middleware, after the first events are dispatched, so on an instance where the flag stays set every request pays for the timing, but only activated requests write a profile.
 
 ## See also
 

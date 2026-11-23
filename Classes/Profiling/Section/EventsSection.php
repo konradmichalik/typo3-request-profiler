@@ -18,7 +18,6 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\EventCollector;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_slice;
-use function count;
 
 /**
  * EventsSection.
@@ -49,38 +48,27 @@ final class EventsSection implements ProfileSection
      */
     public function collect(ProfileContext $context): ?array
     {
-        $events = GeneralUtility::makeInstance(EventCollector::class)->getEvents();
+        $groups = GeneralUtility::makeInstance(EventCollector::class)->getGroups();
 
-        if ([] === $events) {
+        if ([] === $groups) {
             return null;
         }
 
+        $count = 0;
         $totalMs = 0.0;
-        /** @var array<string, array{event: string, count: int, total_ms: float}> $groups */
-        $groups = [];
-
-        foreach ($events as $event) {
-            $totalMs += $event['ms'];
-            $name = $event['event'];
-            $groups[$name] ??= ['event' => $name, 'count' => 0, 'total_ms' => 0.0];
-            ++$groups[$name]['count'];
-            $groups[$name]['total_ms'] += $event['ms'];
+        $top = [];
+        foreach ($groups as $event => $group) {
+            $count += $group['count'];
+            $totalMs += $group['total_ms'];
+            $top[] = ['event' => $event, 'count' => $group['count'], 'total_ms' => round($group['total_ms'], 2)];
         }
 
-        $top = array_values($groups);
         usort($top, static fn (array $a, array $b): int => $b['total_ms'] <=> $a['total_ms']);
 
         return [
-            'count' => count($events),
+            'count' => $count,
             'total_ms' => round($totalMs, 2),
-            'top' => array_map(
-                static fn (array $group): array => [
-                    'event' => $group['event'],
-                    'count' => $group['count'],
-                    'total_ms' => round($group['total_ms'], 2),
-                ],
-                array_slice($top, 0, self::MAX_EVENTS),
-            ),
+            'top' => array_slice($top, 0, self::MAX_EVENTS),
         ];
     }
 }

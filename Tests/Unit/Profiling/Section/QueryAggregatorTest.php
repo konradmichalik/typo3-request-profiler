@@ -77,6 +77,74 @@ final class QueryAggregatorTest extends TestCase
             'SELECT * FROM pages WHERE uid IN (?, ?, ?)',
             'SELECT * FROM pages WHERE uid IN (?)',
         ];
+        yield 'apostrophe in line comment does not shift quote matching' => [
+            "SELECT * FROM pages -- don't\nWHERE slug = 'secret'",
+            'SELECT * FROM pages WHERE slug = ?',
+        ];
+        yield 'apostrophe in block comment does not shift quote matching' => [
+            "SELECT /* it's */ * FROM pages WHERE slug = 'secret'",
+            'SELECT * FROM pages WHERE slug = ?',
+        ];
+        yield 'comment marker inside string literal is not a comment' => [
+            "SELECT * FROM pages WHERE a = '-- x' AND b = 'y'",
+            'SELECT * FROM pages WHERE a = ? AND b = ?',
+        ];
+        yield 'comment marker inside quoted identifier is kept' => [
+            'SELECT * FROM `a--b` WHERE x = 5',
+            'SELECT * FROM `a--b` WHERE x = ?',
+        ];
+        yield 'hex literal' => [
+            'SELECT * FROM pages WHERE hash = 0xDEADBEEF',
+            'SELECT * FROM pages WHERE hash = ?',
+        ];
+        yield 'named dcValue placeholders group with different list lengths' => [
+            'SELECT * FROM pages WHERE uid IN (:dcValue1, :dcValue2, :dcValue3)',
+            'SELECT * FROM pages WHERE uid IN (?)',
+        ];
+        yield 'double-quoted value stays as is (identifier quotes on PostgreSQL and SQLite)' => [
+            'SELECT * FROM "pages" WHERE email = "max@example.org"',
+            'SELECT * FROM "pages" WHERE email = "max@example.org"',
+        ];
+    }
+
+    #[Test]
+    public function normalizeSqlGroupsDcValueInListsOfDifferentLength(): void
+    {
+        self::assertSame(
+            $this->subject->normalizeSql('SELECT 1 FROM t WHERE uid IN (:dcValue1, :dcValue2)'),
+            $this->subject->normalizeSql('SELECT 1 FROM t WHERE uid IN (:dcValue1, :dcValue2, :dcValue3)'),
+        );
+    }
+
+    #[Test]
+    public function normalizeSqlCapsBulkInsertWithElisionMarker(): void
+    {
+        $sql = 'INSERT INTO t (a, b) VALUES '.implode(', ', array_fill(0, 500, '(?, ?)'));
+
+        $normalized = $this->subject->normalizeSql($sql);
+
+        self::assertSame(1000, mb_strlen($normalized));
+        self::assertStringEndsWith('...', $normalized);
+        self::assertStringStartsWith('INSERT INTO t (a, b) VALUES (?, ?)', $normalized);
+    }
+
+    #[Test]
+    public function normalizeSqlKeepsStatementsBelowCapUntouched(): void
+    {
+        self::assertSame('SELECT * FROM pages', $this->subject->normalizeSql('SELECT * FROM pages'));
+    }
+
+    #[Test]
+    public function aggregateAndSlowestQueriesNeverExceedTheCap(): void
+    {
+        $sql = 'INSERT INTO t (a) VALUES '.implode(', ', array_fill(0, 500, '(1)'));
+        $queries = [['sql' => $sql, 'ms' => 1.0], ['sql' => $sql, 'ms' => 2.0]];
+
+        $duplicates = $this->subject->aggregate($queries)['duplicates'];
+        $slowest = $this->subject->slowestQueries($queries);
+
+        self::assertLessThanOrEqual(1000, mb_strlen($duplicates[0]['sql']));
+        self::assertLessThanOrEqual(1000, mb_strlen($slowest[0]['sql']));
     }
 
     #[Test]
@@ -250,5 +318,59 @@ final class QueryAggregatorTest extends TestCase
         self::assertSame(1, $this->subject->statsFor($first)['count']);
         self::assertSame(2, $this->subject->statsFor($second)['count']);
         self::assertSame(1, $this->subject->statsFor($first)['count']);
+    }
+
+    #[Test]
+    public function statsForKeepsCountAndTotalExactBeyondTheCap(): void
+    {
+        $collector = new QueryCollector();
+        $total = QueryCollector::MAX_ENTRIES + 10;
+        for ($i = 0; $i < $total; ++$i) {
+            $collector->addQuery('SELECT title FROM pages WHERE uid = '.$i, 0.5);
+        }
+
+        $stats = $this->subject->statsFor($collector);
+
+        self::assertSame($total, $stats['count']);
+        self::assertSame(round($total * 0.5, 2), $stats['total_ms']);
+        self::assertSame(QueryCollector::MAX_ENTRIES, $stats['duplicates'][0]['count']);
+    }
+
+    #[Test]
+    public function statsForIsRecomputedWhenOnlyOverflowQueriesWereAdded(): void
+    {
+        $collector = new QueryCollector();
+        for ($i = 0; $i < QueryCollector::MAX_ENTRIES; ++$i) {
+            $collector->addQuery('SELECT 1', 1.0);
+        }
+        $before = $this->subject->statsFor($collector)['count'];
+
+        $collector->addQuery('SELECT 1', 1.0);
+
+        self::assertSame($before + 1, $this->subject->statsFor($collector)['count']);
+    }
+
+    #[Test]
+    public function doubleDashWithoutFollowingWhitespaceIsNotAComment(): void
+    {
+        self::assertSame('SELECT ?--?', $this->subject->normalizeSql('SELECT 5--3'));
+        self::assertSame('SELECT ? FROM t', $this->subject->normalizeSql("SELECT 5 -- note\nFROM t"));
+    }
+
+    #[Test]
+    public function longStatementsDifferingOnlyAfterTheCapStayInSeparateGroups(): void
+    {
+        $columns = implode(', ', array_map(static fn (int $i): string => 'column_'.$i, range(1, 200)));
+        $queries = [
+            ['sql' => 'SELECT '.$columns.' FROM table_a WHERE uid = 1', 'ms' => 1.0],
+            ['sql' => 'SELECT '.$columns.' FROM table_a WHERE uid = 2', 'ms' => 1.0],
+            ['sql' => 'SELECT '.$columns.' FROM table_b WHERE uid = 1', 'ms' => 1.0],
+            ['sql' => 'SELECT '.$columns.' FROM table_b WHERE uid = 2', 'ms' => 1.0],
+        ];
+
+        $duplicates = $this->subject->aggregate($queries)['duplicates'];
+
+        self::assertCount(2, $duplicates);
+        self::assertSame([2, 2], array_column($duplicates, 'count'));
     }
 }

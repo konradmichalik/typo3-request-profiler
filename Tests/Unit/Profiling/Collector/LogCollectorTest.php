@@ -34,19 +34,32 @@ final class LogCollectorTest extends TestCase
     #[Test]
     public function startsEmpty(): void
     {
-        self::assertSame([], $this->subject->getRecords());
+        self::assertSame([], $this->subject->getCounts());
     }
 
     #[Test]
-    public function recordStoresLevelAndComponent(): void
+    public function recordCountsPerLevelAndComponent(): void
     {
+        $this->subject->record('warning', 'TYPO3.CMS.Core.Foo');
         $this->subject->record('warning', 'TYPO3.CMS.Core.Foo');
         $this->subject->record('error', 'App.Service.Bar');
 
-        $records = $this->subject->getRecords();
+        self::assertSame(
+            ['warning' => ['TYPO3.CMS.Core.Foo' => 2], 'error' => ['App.Service.Bar' => 1]],
+            $this->subject->getCounts(),
+        );
+    }
 
-        self::assertCount(2, $records);
-        self::assertSame(['level' => 'warning', 'component' => 'TYPO3.CMS.Core.Foo'], $records[0]);
-        self::assertSame(['level' => 'error', 'component' => 'App.Service.Bar'], $records[1]);
+    #[Test]
+    public function memoryStaysFlatForRepeatedRecords(): void
+    {
+        $this->subject->record('info', 'A');
+        $before = memory_get_usage();
+        for ($i = 0; $i < 100000; ++$i) {
+            $this->subject->record('info', 'A');
+        }
+
+        self::assertLessThan(65536, memory_get_usage() - $before);
+        self::assertSame(['info' => ['A' => 100001]], $this->subject->getCounts());
     }
 }

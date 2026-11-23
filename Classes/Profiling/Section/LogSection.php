@@ -17,7 +17,6 @@ use KonradMichalik\Typo3RequestProfiler\Profiling\Collector\LogCollector;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_slice;
-use function count;
 
 /**
  * LogSection.
@@ -56,21 +55,24 @@ final class LogSection implements ProfileSection
      */
     public function collect(ProfileContext $context): ?array
     {
-        $records = GeneralUtility::makeInstance(LogCollector::class)->getRecords();
+        $counts = GeneralUtility::makeInstance(LogCollector::class)->getCounts();
 
         // A clean request stays free of an empty section, matching the no-noise stance.
-        if ([] === $records) {
+        if ([] === $counts) {
             return null;
         }
 
+        $total = 0;
         /** @var array<string, int> $levelCounts */
         $levelCounts = [];
         /** @var array<string, int> $componentCounts */
         $componentCounts = [];
-
-        foreach ($records as $record) {
-            $levelCounts[$record['level']] = ($levelCounts[$record['level']] ?? 0) + 1;
-            $componentCounts[$record['component']] = ($componentCounts[$record['component']] ?? 0) + 1;
+        foreach ($counts as $level => $components) {
+            foreach ($components as $component => $count) {
+                $total += $count;
+                $levelCounts[$level] = ($levelCounts[$level] ?? 0) + $count;
+                $componentCounts[$component] = ($componentCounts[$component] ?? 0) + $count;
+            }
         }
 
         $byLevel = [];
@@ -87,7 +89,7 @@ final class LogSection implements ProfileSection
         }
 
         return [
-            'count' => count($records),
+            'count' => $total,
             'by_level' => $byLevel,
             'top_components' => $topComponents,
         ];
