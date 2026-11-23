@@ -8,7 +8,7 @@ Dev-only TYPO3 frontend request profiler (`konradmichalik/typo3-request-profiler
 
 - Extension key: `typo3_request_profiler`
 - Namespace: `KonradMichalik\Typo3RequestProfiler\`
-- PHP: `~8.2 || ~8.3 || ~8.4 || ~8.5`
+- PHP: `~8.2 || ~8.3 || ~8.4 || ~8.5 || ~8.6`
 - TYPO3: `^13.4 || ^14.0`
 
 ## Structure
@@ -48,7 +48,7 @@ ddev exec "composer test:functional"   # functional tests need a database
 composer test:coverage         # merged unit and functional coverage (Xdebug)
 ```
 
-CI runs PHPUnit through a reusable workflow on PHP 8.2 to 8.5, TYPO3 13.4 and 14.3, with highest and lowest dependencies. It also runs CGL, a security workflow and OpenSSF Scorecard.
+CI runs PHPUnit through a reusable workflow on PHP 8.2 to 8.6, TYPO3 13.4 and 14.3, with highest and lowest dependencies. It also runs CGL, a security workflow and OpenSSF Scorecard.
 
 ## Code style and static analysis
 
