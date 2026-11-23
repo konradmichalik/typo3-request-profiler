@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3RequestProfiler\Activation;
 use InvalidArgumentException;
 
 use function preg_match;
+use function strlen;
 use function trim;
 
 /**
@@ -50,6 +51,11 @@ final readonly class Duration
     {
         if (1 !== preg_match('/^(\d+)([smh]?)$/', trim($value), $matches)) {
             throw new InvalidArgumentException('Invalid duration "'.$value.'". Use a plain second count or a suffix of s, m, or h (e.g. "15m").', 6415078150);
+        }
+
+        // Reject by digit count before casting: an overflowing digit string would cast with a PHP warning.
+        if (strlen(ltrim($matches[1], '0')) > strlen((string) self::MAX_SECONDS)) {
+            throw new InvalidArgumentException('Duration must be between 1 second and 7 days.', 2133962696);
         }
 
         $amount = (int) $matches[1];
