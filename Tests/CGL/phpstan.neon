@@ -19,6 +19,7 @@ parameters:
 		-
 			message: '#^Calling putenv\(\) is forbidden, might overwrite existing variables\.$#'
 			paths:
+				- ../../Tests/Unit/Activation/ProfilerActivationTest.php
 				- ../../Tests/Unit/ConfigurationTest.php
 				- ../../Tests/Unit/Profiling/Instrumentation/Doctrine/QueryOriginTest.php
 				- ../../Tests/Unit/Profiling/Instrumentation/Doctrine/ProfilingConnectionTest.php

@@ -17,6 +17,8 @@ use KonradMichalik\Typo3RequestProfiler\Activation\{ActivationMode, Duration, Pr
 use KonradMichalik\Typo3RequestProfiler\Tests\Functional\DevelopmentContextTrait;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Http\ServerRequest;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -38,7 +40,7 @@ final class ProfilerActivationTest extends FunctionalTestCase
     {
         parent::setUp();
         $this->stateService = new ProfilerStateService();
-        $this->subject = new ProfilerActivation($this->stateService);
+        $this->subject = new ProfilerActivation($this->stateService, GeneralUtility::makeInstance(LogManager::class));
     }
 
     protected function tearDown(): void
@@ -110,18 +112,18 @@ final class ProfilerActivationTest extends FunctionalTestCase
     #[Test]
     public function decideReturnsHeaderOutsideDevelopmentWhenTokenMatchesTheConfiguredSecret(): void
     {
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
         self::assertSame(
             ActivationMode::Header,
-            $this->subject->decide($this->request('s3cr3t-token-value')),
+            $this->subject->decide($this->request('s3cr3t-token-value-0123456789abcdef')),
         );
     }
 
     #[Test]
     public function decideReturnsNoneOutsideDevelopmentWhenTokenDoesNotMatchTheConfiguredSecret(): void
     {
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
         self::assertSame(ActivationMode::None, $this->subject->decide($this->request('wrong-token')));
     }
@@ -133,12 +135,12 @@ final class ProfilerActivationTest extends FunctionalTestCase
         // (Context already covers it) — isHeaderTriggered() below is the
         // separate, always-checked signal the middleware uses for the
         // response's correlation header regardless of which mode "won" here.
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
         $this->inDevelopmentContext(function (): void {
             self::assertSame(
                 ActivationMode::Context,
-                $this->subject->decide($this->request('s3cr3t-token-value')),
+                $this->subject->decide($this->request('s3cr3t-token-value-0123456789abcdef')),
             );
         });
     }
@@ -176,15 +178,15 @@ final class ProfilerActivationTest extends FunctionalTestCase
     #[Test]
     public function isHeaderTriggeredIsTrueOutsideDevelopmentWhenTokenMatchesTheSecret(): void
     {
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
-        self::assertTrue($this->subject->isHeaderTriggered($this->request('s3cr3t-token-value')));
+        self::assertTrue($this->subject->isHeaderTriggered($this->request('s3cr3t-token-value-0123456789abcdef')));
     }
 
     #[Test]
     public function isHeaderTriggeredIsFalseOutsideDevelopmentWhenTokenDoesNotMatch(): void
     {
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
         self::assertFalse($this->subject->isHeaderTriggered($this->request('wrong-token')));
     }
@@ -192,10 +194,10 @@ final class ProfilerActivationTest extends FunctionalTestCase
     #[Test]
     public function isHeaderTriggeredStaysTrueEvenWhenContextAlreadyActivatedProfiling(): void
     {
-        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value');
+        putenv('TYPO3_REQUEST_PROFILER_SECRET=s3cr3t-token-value-0123456789abcdef');
 
         $this->inDevelopmentContext(function (): void {
-            self::assertTrue($this->subject->isHeaderTriggered($this->request('s3cr3t-token-value')));
+            self::assertTrue($this->subject->isHeaderTriggered($this->request('s3cr3t-token-value-0123456789abcdef')));
         });
     }
 

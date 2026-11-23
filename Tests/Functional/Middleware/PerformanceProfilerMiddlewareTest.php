@@ -24,6 +24,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
 use TYPO3\CMS\Core\Core\{Environment, RequestId};
 use TYPO3\CMS\Core\Http\{Response, ServerRequest};
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -86,7 +88,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
         $middleware = new PerformanceProfilerMiddleware(
             $requestId,
             new ProfileWriter([new TimingSection()]),
-            new ProfilerActivation($stateService),
+            new ProfilerActivation($stateService, GeneralUtility::makeInstance(LogManager::class)),
         );
 
         $response = $middleware->process(new ServerRequest('https://example.com/', 'GET'), $this->handler());
@@ -237,7 +239,7 @@ final class PerformanceProfilerMiddlewareTest extends FunctionalTestCase
 
     private function activation(): ProfilerActivation
     {
-        return new ProfilerActivation(new ProfilerStateService());
+        return new ProfilerActivation(new ProfilerStateService(), GeneralUtility::makeInstance(LogManager::class));
     }
 
     private function throwingSection(): ProfileSection
