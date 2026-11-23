@@ -24,6 +24,7 @@ services:
       - '../Classes/Profiling/ProfileReader.php'
       # Static utility, not a service.
       - '../Classes/Profiling/UrlSanitizer.php'
+      - '../Classes/Profiling/ProfileResolver.php'
       # Resolved everywhere via GeneralUtility::makeInstance() to share one instance.
       - '../Classes/Profiling/Collector/*'
 

@@ -87,6 +87,7 @@ That's the gist. The full artifact also carries cache state, memory usage, PHP i
 | [Activation](docs/activation.md) | Development context, forcing it elsewhere via an env var, the `profiler:activate` CLI toggle, and the HTTP header trigger for per-request correlation |
 | [Configuration](docs/configuration.md) | Sampling threshold, retention, query tracing, and PSR-14 event timing |
 | [Profile Format](docs/profile-format.md) | The full JSON schema, provenance metadata, and the `ProfileReader` read API |
+| [Compare](docs/compare.md) | `profiler:compare`: diff two profiles, with text and JSON output |
 
 ## 🧑‍💻 Contributing
 
